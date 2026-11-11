@@ -1,0 +1,93 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": PS Priya Sharma @student07
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - text: HCI401
+  - text: "HCI401 Your Role: STUDENT"
+  - img
+  - text: "Professor:"
+  - strong: Dr Kabir Rao
+  - img
+  - text: "TAs:"
+  - strong: Noor Khan
+  - heading "Computer Networks" [level=1]
+  - paragraph: OSI & TCP/IP architectures, packet routing, congestion control, and transport protocols.
+  - button "Overview":
+    - img
+    - text: Overview
+  - button "Assignments (3)":
+    - img
+    - text: Assignments (3)
+  - button "Quizzes (3)":
+    - img
+    - text: Quizzes (3)
+  - button "Grades":
+    - img
+    - text: Grades
+  - button "Resources (4)":
+    - img
+    - text: Resources (4)
+  - button "Policies (8)":
+    - img
+    - text: Policies (8)
+  - heading "Course Gradebook" [level=3]
+  - paragraph: Your personal grade records.
+  - table:
+    - rowgroup:
+      - row "Student Assessments Breakdown Overall Percentage":
+        - columnheader "Student"
+        - columnheader "Assessments Breakdown"
+        - columnheader "Overall Percentage"
+    - rowgroup:
+      - 'row "Sam Lee @ta01 Packet Sniffing and Protocol Analysis: Not graded Socket Programming: Multi-threaded HTTP Server: Not graded Routing Algorithm Simulation (Dijkstra & DV): Not graded Midterm Online Assessment: Not graded Networking Protocols Practice Quiz: Not graded Subnetting and Routing Quiz: Not graded 0%"':
+        - cell "Sam Lee @ta01"
+        - 'cell "Packet Sniffing and Protocol Analysis: Not graded Socket Programming: Multi-threaded HTTP Server: Not graded Routing Algorithm Simulation (Dijkstra & DV): Not graded Midterm Online Assessment: Not graded Networking Protocols Practice Quiz: Not graded Subnetting and Routing Quiz: Not graded"'
+        - cell "0%"

@@ -85,13 +85,15 @@ def list_course_assignments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retrieve all assignments for a course if user has access."""
+    """Retrieve all assignments for a course if user has access. Students see published only."""
     verify_course_access(course_id, current_user, db)
+    role = get_user_course_role(course_id, current_user, db)
 
-    assignments = db.scalars(
-        select(Assignment).where(Assignment.course_id == course_id).order_by(Assignment.id)
-    ).all()
+    stmt = select(Assignment).where(Assignment.course_id == course_id).order_by(Assignment.id)
+    if role == "student":
+        stmt = stmt.where(Assignment.is_published == True)
 
+    assignments = db.scalars(stmt).all()
     return [serialize_assignment(a, current_user, db) for a in assignments]
 
 
@@ -101,7 +103,7 @@ def get_assignment_by_id(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retrieve individual assignment details."""
+    """Retrieve individual assignment details. Restricts unpublished assignments from students."""
     assignment = db.get(Assignment, assignment_id)
     if not assignment:
         raise HTTPException(
@@ -110,6 +112,23 @@ def get_assignment_by_id(
         )
 
     verify_course_access(assignment.course_id, current_user, db)
+    role = get_user_course_role(assignment.course_id, current_user, db)
+    if role == "student" and not assignment.is_published:
+        log_activity(
+            db=db,
+            user=current_user,
+            action="VIEW_ASSIGNMENT",
+            resource_type="assignment",
+            resource_id=str(assignment.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"Student {current_user.username} denied access to unpublished assignment '{assignment.title}'.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: this assignment is unpublished.",
+        )
+
     return serialize_assignment(assignment, current_user, db)
 
 

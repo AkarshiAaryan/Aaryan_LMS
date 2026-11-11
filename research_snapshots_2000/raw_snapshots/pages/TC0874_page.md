@@ -1,0 +1,99 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": RD Rohan Das @student02
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - text: CSE302
+  - text: "CSE302 Your Role: STUDENT"
+  - img
+  - text: "Professor:"
+  - strong: Dr Mira Shah
+  - img
+  - text: "TAs:"
+  - strong: Sam Lee
+  - heading "Database Management Systems" [level=1]
+  - paragraph: Relational algebra, SQL, index architectures, transaction isolation, and query optimization.
+  - button "Overview":
+    - img
+    - text: Overview
+  - button "Assignments (4)":
+    - img
+    - text: Assignments (4)
+  - button "Quizzes (3)":
+    - img
+    - text: Quizzes (3)
+  - button "Grades":
+    - img
+    - text: Grades
+  - button "Resources (4)":
+    - img
+    - text: Resources (4)
+  - button "Policies (5)":
+    - img
+    - text: Policies (5)
+  - heading "Course Announcements" [level=3]:
+    - img
+    - text: Course Announcements
+  - paragraph: No announcements posted yet.
+  - heading "About this Course" [level=3]
+  - paragraph: Relational algebra, SQL, index architectures, transaction isolation, and query optimization.
+  - text: "4"
+  - paragraph: Assignments
+  - text: "3"
+  - paragraph: Quizzes
+  - text: "4"
+  - paragraph: Resources
+  - heading "Course Instructional Staff" [level=3]
+  - text: DM
+  - paragraph: Dr Mira Shah
+  - paragraph: Course Professor
+  - text: TA
+  - paragraph: Sam Lee
+  - paragraph: Teaching Assistant

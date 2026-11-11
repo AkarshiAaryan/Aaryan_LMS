@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..database import get_db
-from ..models import User, Course, Assignment, Submission, GradeHistory, GroupMember
+from ..models import User, Course, Assignment, Submission, GradeHistory, Group, GroupMember
 from ..schemas import SubmissionOut, SubmissionCreate, SubmissionGrade, GradeHistoryOut
 from ..auth import get_current_user
 from ..permissions import (
@@ -110,18 +110,42 @@ def submit_assignment(
     # Only enrolled students in this course may submit
     verify_course_student_enrollment(assignment.course_id, current_user, db)
 
+    # Validate group scoping if payload specifies group_id
+    if payload.group_id:
+        grp = db.get(Group, payload.group_id)
+        if not grp or grp.course_id != assignment.course_id:
+            log_activity(
+                db=db,
+                user=current_user,
+                action="SUBMIT_COURSE_WORK",
+                resource_type="submission",
+                outcome="BLOCK",
+                http_status=status.HTTP_403_FORBIDDEN,
+                detail=f"Student {current_user.username} supplied cross-course or invalid group {payload.group_id} for assignment {assignment_id}.",
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: invalid group association for this course assignment.",
+            )
+
     # Determine group if assignment is a group assignment
-    group_id = None
+    group_id = payload.group_id
     if assignment.is_group:
         gm = db.scalar(
             select(GroupMember)
-            .join(GroupMember.group)
+            .join(Group, GroupMember.group_id == Group.id)
             .where(
                 GroupMember.user_id == current_user.id,
+                Group.course_id == assignment.course_id,
             )
         )
         if gm:
             group_id = gm.group_id
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: you must belong to an approved project group in this course to submit group assignments.",
+            )
 
     submission = db.scalar(
         select(Submission).where(

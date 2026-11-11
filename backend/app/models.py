@@ -33,6 +33,21 @@ class User(Base):
     group_memberships = relationship("GroupMember", back_populates="user", cascade="all, delete-orphan")
 
 
+class Department(Base):
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(20), unique=True, nullable=False, index=True)  # 'CS', 'EE', 'HCI', 'DS'
+    name = Column(String(150), nullable=False)
+    description = Column(Text, default="", nullable=False)
+    head_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    courses = relationship("Course", back_populates="department")
+    head = relationship("User", foreign_keys=[head_id])
+
+
 class Course(Base):
     __tablename__ = "courses"
 
@@ -40,11 +55,14 @@ class Course(Base):
     code = Column(String(20), unique=True, nullable=False, index=True)
     title = Column(String(150), nullable=False)
     description = Column(Text, default="", nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
     teacher_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     # Relationships
+    department = relationship("Department", back_populates="courses")
     teacher = relationship("User", back_populates="taught_courses")
+    sections = relationship("CourseSection", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
     assignments = relationship("Assignment", back_populates="course", cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="course", cascade="all, delete-orphan")
@@ -52,6 +70,27 @@ class Course(Base):
     announcements = relationship("Announcement", back_populates="course", cascade="all, delete-orphan")
     groups = relationship("Group", back_populates="course", cascade="all, delete-orphan")
     policies = relationship("CoursePolicy", back_populates="course", cascade="all, delete-orphan")
+    discussion_threads = relationship("DiscussionThread", back_populates="course", cascade="all, delete-orphan")
+    learning_modules = relationship("LearningModule", back_populates="course", cascade="all, delete-orphan")
+    course_files = relationship("CourseFile", back_populates="course", cascade="all, delete-orphan")
+    attendance_records = relationship("AttendanceRecord", back_populates="course", cascade="all, delete-orphan")
+
+
+class CourseSection(Base):
+    __tablename__ = "course_sections"
+    __table_args__ = (UniqueConstraint("course_id", "section_number", name="uq_course_section_number"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    section_number = Column(String(20), nullable=False)  # 'SEC01', 'SEC02'
+    title = Column(String(100), default="", nullable=False)
+    instructor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course", back_populates="sections")
+    instructor = relationship("User", foreign_keys=[instructor_id])
+    enrollments = relationship("Enrollment", back_populates="section")
 
 
 class Enrollment(Base):
@@ -61,12 +100,15 @@ class Enrollment(Base):
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    role = Column(String(30), default="student", nullable=False)  # 'student', 'ta', 'professor'
+    section_id = Column(Integer, ForeignKey("course_sections.id", ondelete="SET NULL"), nullable=True)
+    role = Column(String(30), default="student", nullable=False)  # 'student', 'ta', 'professor', 'coordinator', 'auditor'
+    status = Column(String(20), default="active", nullable=False)  # 'active', 'suspended', 'revoked'
     enrolled_at = Column(DateTime(timezone=True), default=utc_now)
 
     # Relationships
     course = relationship("Course", back_populates="enrollments")
     user = relationship("User", back_populates="enrollments")
+    section = relationship("CourseSection", back_populates="enrollments")
 
 
 class Group(Base):
@@ -300,3 +342,153 @@ class ActivityLog(Base):
 
     # Relationships
     user = relationship("User", back_populates="activity_logs")
+
+
+# ===================== NEW LMS MODULE MODELS =====================
+
+class DiscussionThread(Base):
+    __tablename__ = "discussion_threads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    is_pinned = Column(Boolean, default=False, nullable=False)
+    is_locked = Column(Boolean, default=False, nullable=False)
+    is_private = Column(Boolean, default=False, nullable=False)  # private staff-student thread
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course", back_populates="discussion_threads")
+    author = relationship("User", foreign_keys=[author_id])
+    posts = relationship("DiscussionPost", back_populates="thread", cascade="all, delete-orphan")
+    group = relationship("Group")
+
+
+class DiscussionPost(Base):
+    __tablename__ = "discussion_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(Integer, ForeignKey("discussion_threads.id", ondelete="CASCADE"), nullable=False)
+    author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    content = Column(Text, nullable=False)
+    is_flagged = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    thread = relationship("DiscussionThread", back_populates="posts")
+    author = relationship("User", foreign_keys=[author_id])
+
+
+class LearningModule(Base):
+    __tablename__ = "learning_modules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(150), nullable=False)
+    description = Column(Text, default="", nullable=False)
+    order_index = Column(Integer, default=1, nullable=False)
+    is_published = Column(Boolean, default=True, nullable=False)
+    unlock_date = Column(String(40), default="", nullable=False)
+    prerequisite_id = Column(Integer, ForeignKey("learning_modules.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course", back_populates="learning_modules")
+    lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan")
+    prerequisite = relationship("LearningModule", remote_side=[id])
+
+
+class Lesson(Base):
+    __tablename__ = "lessons"
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("learning_modules.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, default="", nullable=False)
+    order_index = Column(Integer, default=1, nullable=False)
+    is_published = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    module = relationship("LearningModule", back_populates="lessons")
+
+
+class CourseFile(Base):
+    __tablename__ = "course_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    folder_path = Column(String(255), default="/", nullable=False)
+    filename = Column(String(150), nullable=False)
+    file_size_bytes = Column(Integer, default=1024, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    access_level = Column(String(30), default="public", nullable=False)  # 'public', 'students', 'staff_only', 'group_only', 'private'
+    group_id = Column(Integer, ForeignKey("groups.id", ondelete="SET NULL"), nullable=True)
+    is_archived = Column(Boolean, default=False, nullable=False)
+    expires_at = Column(String(40), default="", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course", back_populates="course_files")
+    owner = relationship("User", foreign_keys=[owner_id])
+    group = relationship("Group")
+
+
+class PeerReview(Base):
+    __tablename__ = "peer_reviews"
+    __table_args__ = (UniqueConstraint("submission_id", "reviewer_id", name="uq_submission_reviewer"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(Integer, ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False)
+    reviewer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    is_anonymous = Column(Boolean, default=True, nullable=False)
+    review_text = Column(Text, default="", nullable=False)
+    score = Column(Integer, nullable=True)
+    status = Column(String(30), default="assigned", nullable=False)  # 'assigned', 'submitted', 'moderated'
+    deadline = Column(String(40), default="", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    submission = relationship("Submission")
+    reviewer = relationship("User", foreign_keys=[reviewer_id])
+
+
+class GradeAppeal(Base):
+    __tablename__ = "grade_appeals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    submission_id = Column(Integer, ForeignKey("submissions.id", ondelete="CASCADE"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    reason = Column(Text, nullable=False)
+    status = Column(String(30), default="pending", nullable=False)  # 'pending', 'under_review', 'approved', 'rejected'
+    reviewer_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    resolution_notes = Column(Text, default="", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    submission = relationship("Submission")
+    student = relationship("User", foreign_keys=[student_id])
+    reviewer = relationship("User", foreign_keys=[reviewer_id])
+
+
+class AttendanceRecord(Base):
+    __tablename__ = "attendance_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    section_id = Column(Integer, ForeignKey("course_sections.id", ondelete="SET NULL"), nullable=True)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    session_date = Column(String(40), nullable=False)
+    status = Column(String(30), default="present", nullable=False)  # 'present', 'absent', 'excused', 'late'
+    is_locked = Column(Boolean, default=False, nullable=False)
+    recorded_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    notes = Column(Text, default="", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course", back_populates="attendance_records")
+    student = relationship("User", foreign_keys=[student_id])
+    recorded_by = relationship("User", foreign_keys=[recorded_by_id])

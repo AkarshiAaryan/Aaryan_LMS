@@ -6,28 +6,16 @@ from sqlalchemy import select, func
 
 from .database import get_db
 from .auth import get_current_user
+from .clock import Clock, parse_iso_datetime
 from .models import (
-    User, Course, Enrollment, Assignment, Submission, Quiz, QuizAttempt,
-    Resource, ActivityLog, GroupMember
+    User, Course, Enrollment, Group, GroupMember, Assignment, Submission, Quiz, QuizAttempt,
+    Resource, ActivityLog
 )
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def parse_iso_datetime(dt_str: str) -> datetime:
-    try:
-        clean = dt_str.replace("Z", "+00:00")
-        if "T" in clean:
-            dt = datetime.fromisoformat(clean)
-        else:
-            dt = datetime.fromisoformat(clean + "T00:00:00+00:00")
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except Exception:
-        return utc_now()
+    """Return current effective time from deterministic Clock."""
+    return Clock.now()
 
 
 def log_activity(
@@ -242,10 +230,11 @@ def verify_course_student_enrollment(course_id: int, user: User, db: Session) ->
 
 
 def verify_resource_access(resource: Resource, user: User, db: Session) -> Resource:
-    """Verify access to course resource. Restricts staff-only resources (answer keys, rubrics) from students."""
+    """Verify access to course resource. Enforces visibility and staff-only boundaries."""
     verify_course_access(resource.course_id, user, db)
     course_role = get_user_course_role(resource.course_id, user, db)
 
+    # 1. Staff-only protection
     if resource.is_staff_only and course_role not in ["admin", "professor", "ta"]:
         log_activity(
             db=db,
@@ -260,6 +249,23 @@ def verify_resource_access(resource: Resource, user: User, db: Session) -> Resou
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: this resource is restricted to course staff.",
+        )
+
+    # 2. Unpublished / hidden resource protection for students
+    if not resource.is_visible and course_role not in ["admin", "professor", "ta"]:
+        log_activity(
+            db=db,
+            user=user,
+            action="VIEW_UNPUBLISHED_RESOURCE",
+            resource_type="resource",
+            resource_id=str(resource.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"Student {user.username} attempted to view unpublished/hidden resource '{resource.title}'.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: this resource is currently unpublished or hidden.",
         )
 
     return resource
@@ -291,14 +297,16 @@ def verify_submission_access(submission: Submission, user: User, db: Session) ->
 
         # Group submission check
         if submission.group_id:
-            is_group_member = db.scalar(
-                select(GroupMember).where(
-                    GroupMember.group_id == submission.group_id,
-                    GroupMember.user_id == user.id,
+            grp = db.get(Group, submission.group_id)
+            if grp and grp.course_id == course_id:
+                is_group_member = db.scalar(
+                    select(GroupMember).where(
+                        GroupMember.group_id == submission.group_id,
+                        GroupMember.user_id == user.id,
+                    )
                 )
-            )
-            if is_group_member:
-                return submission
+                if is_group_member:
+                    return submission
 
         log_activity(
             db=db,
@@ -321,53 +329,83 @@ def verify_submission_access(submission: Submission, user: User, db: Session) ->
 def verify_submission_edit(submission: Submission, user: User, db: Session) -> None:
     """
     Verify that student is allowed to edit/submit work:
-    - Own submission or group submission.
+    - Actively enrolled as a student in this course.
+    - Own submission or legitimate group member in this course.
+    - Not locked.
     - Before deadline (unless extension is granted).
     """
-    if submission.student_id != user.id:
-        if submission.group_id:
-            is_member = db.scalar(
-                select(GroupMember).where(
-                    GroupMember.group_id == submission.group_id,
-                    GroupMember.user_id == user.id,
-                )
+    assignment = submission.assignment
+    if not assignment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found.")
+
+    # 1. Enforce active student role in this specific course
+    course_role = get_user_course_role(assignment.course_id, user, db)
+    if course_role != "student":
+        log_activity(
+            db=db,
+            user=user,
+            action="EDIT_SUBMISSION",
+            resource_type="submission",
+            resource_id=str(submission.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user.username} (course role: {course_role}) is not enrolled as a student in course {assignment.course_id}.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: you must be actively enrolled as a student in this course to edit submissions.",
+        )
+
+    # 2. Lock check
+    if submission.is_locked:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: this submission is locked and cannot be edited.",
+        )
+
+    # 3. Ownership and group boundary check
+    if submission.group_id:
+        grp = db.get(Group, submission.group_id)
+        if not grp or grp.course_id != assignment.course_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: invalid group association for this course assignment.",
             )
-            if not is_member:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied: you are not a member of this submission's group.",
-                )
-        else:
+        is_member = db.scalar(
+            select(GroupMember).where(
+                GroupMember.group_id == submission.group_id,
+                GroupMember.user_id == user.id,
+            )
+        )
+        if not is_member:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: you are not a member of this submission's group.",
+            )
+    else:
+        if submission.student_id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied: you cannot edit another student's submission.",
             )
 
-    # Deadline check
-    assignment = submission.assignment
-    if assignment:
-        due_dt = parse_iso_datetime(assignment.due_date)
-        now = utc_now()
-        if now > due_dt and not submission.extension_granted:
-            log_activity(
-                db=db,
-                user=user,
-                action="EDIT_PAST_DEADLINE",
-                resource_type="submission",
-                resource_id=str(submission.id),
-                outcome="BLOCK",
-                http_status=status.HTTP_403_FORBIDDEN,
-                detail=f"Student {user.username} attempted to edit submission after deadline {assignment.due_date} without extension.",
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: submission deadline has passed and no extension was granted.",
-            )
-
-    if submission.is_locked:
+    # 4. Deadline check
+    due_dt = parse_iso_datetime(assignment.due_date)
+    now = utc_now()
+    if now > due_dt and not submission.extension_granted:
+        log_activity(
+            db=db,
+            user=user,
+            action="EDIT_PAST_DEADLINE",
+            resource_type="submission",
+            resource_id=str(submission.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"Student {user.username} attempted to edit submission after deadline {assignment.due_date} without extension.",
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: this submission is locked and cannot be edited.",
+            detail="Access denied: submission deadline has passed and no extension was granted.",
         )
 
 
@@ -449,12 +487,44 @@ def verify_publish_grades_access(course_id: int, user: User, db: Session) -> Cou
 
 
 def verify_quiz_start(quiz: Quiz, user: User, db: Session) -> None:
-    """Verify that a student can start a quiz attempt (window open, attempt limit not exceeded)."""
+    """Verify that a student can start a quiz attempt (enrolled student, published, window open, quota remains)."""
     course_role = get_user_course_role(quiz.course_id, user, db)
     if not course_role:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: you are not enrolled in this course.",
+        )
+
+    if course_role != "student":
+        log_activity(
+            db=db,
+            user=user,
+            action="START_QUIZ",
+            resource_type="quiz",
+            resource_id=str(quiz.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user.username} (course role: {course_role}) attempted to initiate a student quiz attempt.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: only enrolled students may initiate student quiz attempts.",
+        )
+
+    if not quiz.is_published:
+        log_activity(
+            db=db,
+            user=user,
+            action="START_QUIZ",
+            resource_type="quiz",
+            resource_id=str(quiz.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"Student {user.username} attempted to start unpublished quiz '{quiz.title}'.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: quiz is not published.",
         )
 
     now = utc_now()

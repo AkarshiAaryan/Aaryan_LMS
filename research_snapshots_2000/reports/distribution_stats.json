@@ -1,0 +1,38 @@
+{
+  "total_cases": 2000,
+  "decisions": {
+    "ALLOW": 958,
+    "BLOCK": 1042
+  },
+  "families": {
+    "FAM01": 154,
+    "FAM02": 154,
+    "FAM03": 154,
+    "FAM04": 154,
+    "FAM05": 154,
+    "FAM06": 154,
+    "FAM07": 154,
+    "FAM08": 154,
+    "FAM09": 154,
+    "FAM10": 154,
+    "FAM11": 152,
+    "FAM12": 154,
+    "FAM13": 154
+  },
+  "roles": {
+    "Student": 1674,
+    "TA": 139,
+    "Professor": 53,
+    "Admin": 57,
+    "Visitor": 77
+  },
+  "contrast_dimensions": {
+    "Ownership": 516,
+    "Identity": 524,
+    "Lifecycle": 332,
+    "Time": 224,
+    "Scope": 404
+  },
+  "adversarial_cases": 77,
+  "multistep_cases": 152
+}

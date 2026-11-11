@@ -103,14 +103,16 @@ def list_course_quizzes(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retrieve quizzes for a course."""
+    """Retrieve quizzes for a course. Students see published quizzes only."""
     verify_course_access(course_id, current_user, db)
+    role = get_user_course_role(course_id, current_user, db)
 
-    quizzes = db.scalars(
-        select(Quiz).where(Quiz.course_id == course_id).order_by(Quiz.id)
-    ).all()
+    stmt = select(Quiz).where(Quiz.course_id == course_id).order_by(Quiz.id)
+    if role == "student":
+        stmt = stmt.where(Quiz.is_published == True)
 
-    return [serialize_quiz(q, current_user, db) for q in quizzes]
+    quizzes = db.scalars(stmt).all()
+    return [serialize_quiz(q, current_user, db) for a in quizzes for q in [a]]
 
 
 @router.get("/quizzes/{quiz_id}", response_model=QuizOut)
@@ -119,12 +121,29 @@ def get_quiz_by_id(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Retrieve a quiz and its questions."""
+    """Retrieve a quiz and its questions. Restricts unpublished quizzes from students."""
     quiz = db.get(Quiz, quiz_id)
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Quiz not found.")
 
     verify_course_access(quiz.course_id, current_user, db)
+    role = get_user_course_role(quiz.course_id, current_user, db)
+    if role == "student" and not quiz.is_published:
+        log_activity(
+            db=db,
+            user=current_user,
+            action="VIEW_QUIZ",
+            resource_type="quiz",
+            resource_id=str(quiz.id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"Student {current_user.username} denied access to unpublished quiz '{quiz.title}'.",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: this quiz has not been published yet.",
+        )
+
     return serialize_quiz(quiz, current_user, db)
 
 

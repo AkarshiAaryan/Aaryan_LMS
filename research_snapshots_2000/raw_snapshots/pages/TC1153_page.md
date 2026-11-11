@@ -1,0 +1,85 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": IR Isha Roy @student03
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "HCI401":
+      - /url: /courses/1
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: SQL Indexing & Transaction Isolation Quiz
+  - text: HCI401
+  - img
+  - text: "Time Limit:"
+  - strong: 25 minutes
+  - heading "SQL Indexing & Transaction Isolation Quiz" [level=1]
+  - paragraph: Timed diagnostic evaluating B+ tree indexing and ACID isolation levels.
+  - button "Attempt Quiz Now":
+    - img
+    - text: Attempt Quiz Now
+  - paragraph: "Attempts Remaining: 0 of 1"
+  - text: Questions 1 Max Attempts 1 Window Opens 2026-09-01T00:00:00Z Window Closes 2026-10-01T23:59:59Z
+  - heading "Your Previous Attempts" [level=3]
+  - text: 1 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Attempt # Status Score Completion Date"':
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - row "Attempt 1 finished 90% 9/15/2026, 10:22:00 AM":
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "90%"
+        - cell "9/15/2026, 10:22:00 AM"

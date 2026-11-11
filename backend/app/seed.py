@@ -6,7 +6,9 @@ from sqlalchemy import select
 from .database import engine, Base, SessionLocal
 from .models import (
     User, Course, Enrollment, Group, GroupMember, Assignment, Submission, GradeHistory,
-    Quiz, QuizQuestion, QuizAttempt, QuizAnswer, Resource, Announcement, CoursePolicy
+    Quiz, QuizQuestion, QuizAttempt, QuizAnswer, Resource, Announcement, CoursePolicy,
+    Department, CourseSection, DiscussionThread, DiscussionPost, LearningModule, Lesson,
+    CourseFile, PeerReview, GradeAppeal, AttendanceRecord
 )
 from .auth import hash_password
 
@@ -23,17 +25,24 @@ def seed_database():
         # 1. SEED ACCOUNTS (23 personas: 1 Admin, 2 Professors, 4 TAs, 16 Students)
         # =========================================================================
         accounts_data = [
-            # Institutional Administrator (1)
+            # Institutional Administrator (2)
             ("admin01", "Alex Admin", "admin01@guardslm.local", "admin"),
-            # Course Professors / Faculty (2)
+            ("admin02", "Sarah Connor", "admin02@guardslm.local", "admin"),
+            # Course Professors / Faculty (4)
             ("prof01", "Dr Mira Shah", "prof01@guardslm.local", "professor"),
             ("prof02", "Dr Kabir Rao", "prof02@guardslm.local", "professor"),
-            # Teaching Assistants (4)
+            ("prof03", "Dr Elena Vance", "prof03@guardslm.local", "professor"),
+            ("prof04", "Dr Alan Turing", "prof04@guardslm.local", "professor"),
+            # Teaching Assistants (8)
             ("ta01", "Sam Lee", "ta01@guardslm.local", "ta"),
             ("ta02", "Noor Khan", "ta02@guardslm.local", "ta"),
             ("ta03", "Dev Patel", "ta03@guardslm.local", "ta"),
             ("ta04", "Elena Rostova", "ta04@guardslm.local", "ta"),
-            # Enrolled Students (16)
+            ("ta05", "Liam O'Connor", "ta05@guardslm.local", "ta"),
+            ("ta06", "Mei Lin", "ta06@guardslm.local", "ta"),
+            ("ta07", "Tariq Mansour", "ta07@guardslm.local", "ta"),
+            ("ta08", "Zoe Washington", "ta08@guardslm.local", "ta"),
+            # Enrolled Students (40 total)
             ("student01", "Asha Mehta", "student01@guardslm.local", "student"),
             ("student02", "Rohan Das", "student02@guardslm.local", "student"),
             ("student03", "Isha Roy", "student03@guardslm.local", "student"),
@@ -50,6 +59,30 @@ def seed_database():
             ("student14", "Omar Farooq", "student14@guardslm.local", "student"),
             ("student15", "Sofia Morales", "student15@guardslm.local", "student"),
             ("student16", "Kevin Zhao", "student16@guardslm.local", "student"),
+            ("student17", "Maya Lin", "student17@guardslm.local", "student"),
+            ("student18", "Jamal Washington", "student18@guardslm.local", "student"),
+            ("student19", "Hannah Schmidt", "student19@guardslm.local", "student"),
+            ("student20", "Carlos Hernandez", "student20@guardslm.local", "student"),
+            ("student21", "Yuki Tanaka", "student21@guardslm.local", "student"),
+            ("student22", "Amara Okafor", "student22@guardslm.local", "student"),
+            ("student23", "Benjamin Cohen", "student23@guardslm.local", "student"),
+            ("student24", "Leila Al-Mansoor", "student24@guardslm.local", "student"),
+            ("student25", "Alex Rivera", "student25@guardslm.local", "student"),
+            ("student26", "Grace Hopper", "student26@guardslm.local", "student"),
+            ("student27", "Dmitri Ivanov", "student27@guardslm.local", "student"),
+            ("student28", "Fatima Al-Hassan", "student28@guardslm.local", "student"),
+            ("student29", "Lars Andersson", "student29@guardslm.local", "student"),
+            ("student30", "Zack Suspended", "student30@guardslm.local", "student"),
+            ("student31", "Rachel Revoked", "student31@guardslm.local", "student"),
+            ("student32", "Kavita CrossSection", "student32@guardslm.local", "student"),
+            ("student33", "Arthur Auditor", "student33@guardslm.local", "student"),
+            ("student34", "Oliver Twist", "student34@guardslm.local", "student"),
+            ("student35", "Zoe Saldana", "student35@guardslm.local", "student"),
+            ("student36", "Brian Cox", "student36@guardslm.local", "student"),
+            ("student37", "Nadia Comaneci", "student37@guardslm.local", "student"),
+            ("student38", "Leo Tolstoy", "student38@guardslm.local", "student"),
+            ("student39", "Ada Lovelace", "student39@guardslm.local", "student"),
+            ("student40", "Nikola Tesla", "student40@guardslm.local", "student"),
         ]
 
         users_by_username = {}
@@ -827,6 +860,349 @@ def seed_database():
                 att.status = astatus
                 att.started_at = start_t
                 att.completed_at = comp_t
+
+        # =========================================================================
+        # 12. SEED DEPARTMENTS & COURSE SECTIONS
+        # =========================================================================
+        departments_data = [
+            ("CS", "Department of Computer Science", "Computing systems, theory, algorithms and software.", "prof01"),
+            ("EE", "Department of Electrical Engineering", "Networking hardware, embedded systems, and telecommunications.", "prof02"),
+            ("HCI", "Division of Human-Computer Interaction", "User interface design, cognition, and interaction technologies.", "prof03"),
+            ("DS", "Department of Data Science", "Machine learning, statistical inference, and large-scale data systems.", "prof04"),
+        ]
+        depts_by_code = {}
+        for dcode, dname, ddesc, dhead in departments_data:
+            dept = db.scalar(select(Department).where(Department.code == dcode))
+            head_user = users_by_username.get(dhead)
+            if not dept:
+                dept = Department(
+                    code=dcode,
+                    name=dname,
+                    description=ddesc,
+                    head_id=head_user.id if head_user else None,
+                )
+                db.add(dept)
+                db.flush()
+            depts_by_code[dcode] = dept
+
+        # Associate courses with departments
+        course_dept_map = {"CSE301": "CS", "CSE302": "EE", "CSE303": "CS", "HCI401": "HCI"}
+        for ccode, dcode in course_dept_map.items():
+            if ccode in courses_by_code and dcode in depts_by_code:
+                courses_by_code[ccode].department_id = depts_by_code[dcode].id
+
+        # Course Sections
+        sections_data = [
+            ("CSE301", "SEC01", "Morning Lecture & Lab", "prof01"),
+            ("CSE301", "SEC02", "Afternoon Lab & Discussion", "ta01"),
+            ("CSE302", "SEC01", "Main Lecture Track", "prof02"),
+            ("CSE302", "SEC02", "Hands-on Network Lab", "ta02"),
+            ("CSE303", "SEC01", "Systems Core Track", "prof01"),
+            ("CSE303", "SEC02", "Concurrency Lab", "ta03"),
+            ("HCI401", "SEC01", "Design Studio A", "prof02"),
+            ("HCI401", "SEC02", "Design Studio B", "ta02"),
+        ]
+        sections_by_key = {}
+        for ccode, sec_num, stitle, inst_uname in sections_data:
+            course = courses_by_code[ccode]
+            inst_user = users_by_username.get(inst_uname)
+            sec = db.scalar(select(CourseSection).where(
+                CourseSection.course_id == course.id,
+                CourseSection.section_number == sec_num,
+            ))
+            if not sec:
+                sec = CourseSection(
+                    course_id=course.id,
+                    section_number=sec_num,
+                    title=stitle,
+                    instructor_id=inst_user.id if inst_user else None,
+                )
+                db.add(sec)
+                db.flush()
+            sections_by_key[(ccode, sec_num)] = sec
+
+        # Assign sections and active status to existing and new enrollments
+        extra_memberships = [
+            ("CSE301", "student17", "student", "SEC01", "active"),
+            ("CSE301", "student18", "student", "SEC01", "active"),
+            ("CSE301", "student19", "student", "SEC02", "active"),
+            ("CSE301", "student20", "student", "SEC02", "active"),
+            ("CSE301", "student30", "student", "SEC01", "suspended"),  # Suspended student
+            ("CSE301", "student32", "student", "SEC01", "active"),     # Cross-section
+            ("CSE302", "student21", "student", "SEC01", "active"),
+            ("CSE302", "student22", "student", "SEC01", "active"),
+            ("CSE302", "student23", "student", "SEC02", "active"),
+            ("CSE302", "student24", "student", "SEC02", "active"),
+            ("CSE302", "student31", "student", "SEC02", "revoked"),   # Revoked student
+            ("CSE302", "student32", "student", "SEC02", "active"),     # Cross-section
+            ("CSE303", "student25", "student", "SEC01", "active"),
+            ("CSE303", "student26", "student", "SEC01", "active"),
+            ("CSE303", "student27", "student", "SEC02", "active"),
+            ("CSE303", "student28", "student", "SEC02", "active"),
+            ("HCI401", "student35", "student", "SEC01", "active"),
+            ("HCI401", "student36", "student", "SEC01", "active"),
+            ("HCI401", "student37", "student", "SEC02", "active"),
+            ("HCI401", "student38", "student", "SEC02", "active"),
+            ("HCI401", "student39", "student", "SEC02", "active"),
+            ("HCI401", "student40", "student", "SEC02", "active"),
+        ]
+        for ccode, uname, role, sec_num, status_val in extra_memberships:
+            course = courses_by_code[ccode]
+            user = users_by_username[uname]
+            sec = sections_by_key.get((ccode, sec_num))
+            enr = db.scalar(select(Enrollment).where(Enrollment.course_id == course.id, Enrollment.user_id == user.id))
+            if not enr:
+                enr = Enrollment(
+                    course_id=course.id,
+                    user_id=user.id,
+                    role=role,
+                    section_id=sec.id if sec else None,
+                    status=status_val,
+                )
+                db.add(enr)
+            else:
+                enr.role = role
+                enr.section_id = sec.id if sec else None
+                enr.status = status_val
+
+        db.flush()
+
+        # =========================================================================
+        # 13. SEED DISCUSSION FORUMS
+        # =========================================================================
+        c301 = courses_by_code["CSE301"]
+        c302 = courses_by_code["CSE302"]
+        hci = courses_by_code["HCI401"]
+        team_alpha = groups_by_name.get("Design Team Alpha")
+
+        threads_data = [
+            (c301.id, "prof01", "Welcome to CSE301 - Syllabus and Office Hours", "Please post logistical questions here.", True, False, False, None, [
+                ("student01", "Are office hours hybrid or in-person?"),
+                ("prof01", "Both! Tuesdays in Hall 302, Thursdays on Zoom."),
+            ]),
+            (c301.id, "student01", "Confidential Exam Grading Inquiry", "Professor, could you clarify question 2 deductions?", False, False, True, None, [
+                ("prof01", "Reviewed your work: 2 points restored for B-tree key balance."),
+            ]),
+            (c301.id, "prof01", "Midterm Review Session - Discussion Closed", "Review session materials posted. Comments locked.", True, True, False, None, []),
+            (c302.id, "prof02", "TCP Handshake Debugging Discussion", "Post Wireshark capture questions here.", False, False, False, None, [
+                ("student02", "Seeing duplicate SYN-ACK packets in trace 3."),
+                ("ta02", "Check MTU configuration on the bridge interface."),
+            ]),
+            (hci.id, "student01", "Design Team Alpha: Wireframe Prototypes", "Team internal review of Figma design flow.", False, False, False, team_alpha.id if team_alpha else None, [
+                ("student03", "Looks clean! Let's update the contrast ratio on buttons."),
+            ]),
+        ]
+
+        for course_id, author_uname, title, content, is_pinned, is_locked, is_private, group_id, posts in threads_data:
+            author = users_by_username[author_uname]
+            thread = db.scalar(select(DiscussionThread).where(
+                DiscussionThread.course_id == course_id,
+                DiscussionThread.title == title,
+            ))
+            if not thread:
+                thread = DiscussionThread(
+                    course_id=course_id,
+                    author_id=author.id,
+                    title=title,
+                    content=content,
+                    is_pinned=is_pinned,
+                    is_locked=is_locked,
+                    is_private=is_private,
+                    group_id=group_id,
+                )
+                db.add(thread)
+                db.flush()
+                for p_author_uname, p_content in posts:
+                    p_author = users_by_username[p_author_uname]
+                    post = DiscussionPost(
+                        thread_id=thread.id,
+                        author_id=p_author.id,
+                        content=p_content,
+                    )
+                    db.add(post)
+
+        db.flush()
+
+        # =========================================================================
+        # 14. SEED LEARNING MODULES & LESSONS
+        # =========================================================================
+        modules_data = [
+            (c301.id, "Module 1: Relational Data Models & Normalization", "First normal form to BCNF decompositions.", 1, True, "", None, [
+                ("1.1 Introduction to Relational Algebra", "Tuple calculus and basic projection, selection and join operations.", 1, True),
+                ("1.2 Functional Dependencies & 3NF Synthesis", "Armstrong axioms and minimal cover computation.", 2, True),
+            ]),
+            (c301.id, "Module 2: Index Architectures & Storage Engines", "B-Tree, B+ Tree, and LSM-tree architectures.", 2, True, "", None, [
+                ("2.1 Disk Page Layouts & Buffer Pool Management", "LRU-K and Clock eviction algorithms.", 1, True),
+                ("2.2 B+ Tree Splitting and Concurrency", "Latch crabbing and phantom prevention.", 2, True),
+            ]),
+            (c301.id, "Module 3: Advanced Distributed Transactions", "Two-phase commit and Raft consensus.", 3, True, "2026-11-20T00:00:00Z", None, [
+                ("3.1 Distributed Commit Protocols", "2PC failure recovery and participant states.", 1, True),
+                ("3.2 Vector Clocks & Causal Consistency", "Lamport timestamps and partition handling.", 2, True),
+            ]),
+            (c302.id, "Module 1: Internet Architecture & Protocol Layering", "Overview of packet switching and OSI stacks.", 1, True, "", None, [
+                ("1.1 Framing and Error Detection", "CRC and checksum verification.", 1, True),
+            ]),
+        ]
+
+        for course_id, title, desc, order_idx, is_pub, unlock_d, prereq_id, lessons in modules_data:
+            mod = db.scalar(select(LearningModule).where(
+                LearningModule.course_id == course_id,
+                LearningModule.title == title,
+            ))
+            if not mod:
+                mod = LearningModule(
+                    course_id=course_id,
+                    title=title,
+                    description=desc,
+                    order_index=order_idx,
+                    is_published=is_pub,
+                    unlock_date=unlock_d,
+                    prerequisite_id=prereq_id,
+                )
+                db.add(mod)
+                db.flush()
+                for l_title, l_content, l_order, l_pub in lessons:
+                    lesson = Lesson(
+                        module_id=mod.id,
+                        title=l_title,
+                        content=l_content,
+                        order_index=l_order,
+                        is_published=l_pub,
+                    )
+                    db.add(lesson)
+
+        db.flush()
+
+        # =========================================================================
+        # 15. SEED COURSE FILES REPOSITORY
+        # =========================================================================
+        files_data = [
+            (c301.id, "/syllabus", "CSE301_Syllabus_Fall2026.pdf", 250000, "prof01", "public", None, False, ""),
+            (c301.id, "/lectures", "Lecture01_RelationalModel.pdf", 1200000, "prof01", "students", None, False, ""),
+            (c301.id, "/staff_only", "Midterm_Master_Solution_Key.pdf", 450000, "prof01", "staff_only", None, False, ""),
+            (c301.id, "/staff_only", "Final_Exam_Draft_Confidential.pdf", 620000, "prof01", "staff_only", None, False, ""),
+            (c301.id, "/personal", "Asha_Mehta_RevisionNotes.pdf", 85000, "student01", "private", None, False, ""),
+            (c301.id, "/slides", "Temporary_Review_Handout.pdf", 150000, "prof01", "students", None, False, "2026-11-01T00:00:00Z"),
+            (c301.id, "/archive", "Archived_Legacy_Notes_2024.pdf", 300000, "prof01", "public", None, True, ""),
+            (hci.id, "/teams", "TeamAlpha_Usability_Audit.pdf", 750000, "student01", "group_only", team_alpha.id if team_alpha else None, False, ""),
+        ]
+
+        for course_id, folder, fname, fsize, owner_uname, alevel, gid, is_arch, exp_d in files_data:
+            owner = users_by_username[owner_uname]
+            cfile = db.scalar(select(CourseFile).where(
+                CourseFile.course_id == course_id,
+                CourseFile.folder_path == folder,
+                CourseFile.filename == fname,
+            ))
+            if not cfile:
+                cfile = CourseFile(
+                    course_id=course_id,
+                    folder_path=folder,
+                    filename=fname,
+                    file_size_bytes=fsize,
+                    owner_id=owner.id,
+                    access_level=alevel,
+                    group_id=gid,
+                    is_archived=is_arch,
+                    expires_at=exp_d,
+                )
+                db.add(cfile)
+
+        db.flush()
+
+        # =========================================================================
+        # 16. SEED PEER REVIEWS & GRADE APPEALS
+        # =========================================================================
+        # Find submissions for peer review
+        s01_sub = db.scalar(select(Submission).where(
+            Submission.student_id == users_by_username["student01"].id,
+            Submission.grade != None,
+        ))
+        s02_sub = db.scalar(select(Submission).where(
+            Submission.student_id == users_by_username["student02"].id,
+            Submission.grade != None,
+        ))
+
+        if s01_sub:
+            pr1 = db.scalar(select(PeerReview).where(
+                PeerReview.submission_id == s01_sub.id,
+                PeerReview.reviewer_id == users_by_username["student02"].id,
+            ))
+            if not pr1:
+                pr1 = PeerReview(
+                    submission_id=s01_sub.id,
+                    reviewer_id=users_by_username["student02"].id,
+                    is_anonymous=True,
+                    review_text="Strong B-Tree node splitting implementation. Edge cases handled effectively.",
+                    score=92,
+                    status="submitted",
+                    deadline="2026-12-01T00:00:00Z",
+                )
+                db.add(pr1)
+
+            # Grade appeal on s01_sub
+            ga1 = db.scalar(select(GradeAppeal).where(GradeAppeal.submission_id == s01_sub.id))
+            if not ga1:
+                ga1 = GradeAppeal(
+                    submission_id=s01_sub.id,
+                    student_id=users_by_username["student01"].id,
+                    reason="Question 2 concurrency invariant was properly maintained using strict 2PL.",
+                    status="pending",
+                )
+                db.add(ga1)
+
+        if s02_sub:
+            pr2 = db.scalar(select(PeerReview).where(
+                PeerReview.submission_id == s02_sub.id,
+                PeerReview.reviewer_id == users_by_username["student03"].id,
+            ))
+            if not pr2:
+                pr2 = PeerReview(
+                    submission_id=s02_sub.id,
+                    reviewer_id=users_by_username["student03"].id,
+                    is_anonymous=True,
+                    review_text="Clean design, but transaction isolation level was set to Read Committed instead of Serializable.",
+                    score=84,
+                    status="submitted",
+                    deadline="2026-12-01T00:00:00Z",
+                )
+                db.add(pr2)
+
+        db.flush()
+
+        # =========================================================================
+        # 17. SEED ATTENDANCE RECORDS
+        # =========================================================================
+        attendance_samples = [
+            (c301.id, "student01", "2026-10-05", "present", False, "prof01", "Attended morning lecture"),
+            (c301.id, "student01", "2026-10-12", "present", False, "prof01", "Attended lab"),
+            (c301.id, "student01", "2026-10-19", "absent", True, "prof01", "Unexcused absence - Session finalized and locked"),
+            (c301.id, "student02", "2026-10-05", "present", False, "ta01", "Attended lab"),
+            (c301.id, "student02", "2026-10-12", "late", False, "ta01", "Arrived 15 minutes late"),
+            (c301.id, "student03", "2026-10-05", "excused", False, "prof01", "Approved medical leave"),
+            (c302.id, "student01", "2026-10-06", "present", False, "prof02", "Attended network lab"),
+            (c302.id, "student02", "2026-10-06", "present", False, "prof02", "Attended network lab"),
+        ]
+
+        for course_id, suname, sdate, astatus, is_lock, rec_uname, notes in attendance_samples:
+            student = users_by_username[suname]
+            recorder = users_by_username[rec_uname]
+            att = db.scalar(select(AttendanceRecord).where(
+                AttendanceRecord.course_id == course_id,
+                AttendanceRecord.student_id == student.id,
+                AttendanceRecord.session_date == sdate,
+            ))
+            if not att:
+                att = AttendanceRecord(
+                    course_id=course_id,
+                    student_id=student.id,
+                    session_date=sdate,
+                    status=astatus,
+                    is_locked=is_lock,
+                    recorded_by_id=recorder.id,
+                    notes=notes,
+                )
+                db.add(att)
 
         db.commit()
         print("GuardSLM LMS database successfully seeded with expanded research benchmark data.")

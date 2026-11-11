@@ -9,7 +9,8 @@ from .database import engine, Base, SessionLocal
 from .models import User
 from .seed import seed_database
 from .routes import (
-    auth, users, courses, assignments, submissions, quizzes, grades, resources, admin, logs
+    auth, users, courses, assignments, submissions, quizzes, grades, resources, admin, logs,
+    discussions, modules, files, peer_reviews, attendance
 )
 
 
@@ -75,3 +76,8 @@ app.include_router(grades.router)
 app.include_router(resources.router)
 app.include_router(admin.router)
 app.include_router(logs.router)
+app.include_router(discussions.router)
+app.include_router(modules.router)
+app.include_router(files.router)
+app.include_router(peer_reviews.router)
+app.include_router(attendance.router)

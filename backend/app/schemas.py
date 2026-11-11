@@ -406,3 +406,237 @@ class AdminStatsOut(BaseModel):
     total_submissions: int
     total_quiz_attempts: int
     recent_activity_count: int
+
+
+# ===================== DEPARTMENT & SECTION SCHEMAS =====================
+
+class DepartmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    code: str
+    name: str
+    description: str
+    head_id: Optional[int] = None
+    head_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class DepartmentCreate(BaseModel):
+    code: str = Field(..., min_length=2, max_length=20)
+    name: str = Field(..., min_length=3, max_length=150)
+    description: str = ""
+    head_id: Optional[int] = None
+
+
+class CourseSectionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    section_number: str
+    title: str
+    instructor_id: Optional[int] = None
+    instructor_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class CourseSectionCreate(BaseModel):
+    section_number: str = Field(..., min_length=2, max_length=20)
+    title: str = ""
+    instructor_id: Optional[int] = None
+
+
+# ===================== DISCUSSION FORUM SCHEMAS =====================
+
+class DiscussionPostOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    thread_id: int
+    author_id: Optional[int] = None
+    author_name: Optional[str] = None
+    author_role: Optional[str] = None
+    content: str
+    is_flagged: bool
+    created_at: Optional[datetime] = None
+
+
+class DiscussionPostCreate(BaseModel):
+    content: str = Field(..., min_length=1)
+
+
+class DiscussionThreadOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    author_id: Optional[int] = None
+    author_name: Optional[str] = None
+    author_role: Optional[str] = None
+    title: str
+    content: str
+    is_pinned: bool
+    is_locked: bool
+    is_private: bool
+    group_id: Optional[int] = None
+    post_count: int = 0
+    created_at: Optional[datetime] = None
+    posts: Optional[List[DiscussionPostOut]] = []
+
+
+class DiscussionThreadCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=150)
+    content: str = Field(..., min_length=3)
+    is_private: bool = False
+    group_id: Optional[int] = None
+
+
+# ===================== LEARNING MODULE SCHEMAS =====================
+
+class LessonOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    module_id: int
+    title: str
+    content: str
+    order_index: int
+    is_published: bool
+    created_at: Optional[datetime] = None
+
+
+class LessonCreate(BaseModel):
+    title: str = Field(..., min_length=2, max_length=150)
+    content: str = ""
+    order_index: int = 1
+    is_published: bool = True
+
+
+class LearningModuleOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    title: str
+    description: str
+    order_index: int
+    is_published: bool
+    unlock_date: str
+    prerequisite_id: Optional[int] = None
+    prerequisite_title: Optional[str] = None
+    created_at: Optional[datetime] = None
+    lessons: Optional[List[LessonOut]] = []
+
+
+class LearningModuleCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=150)
+    description: str = ""
+    order_index: int = 1
+    is_published: bool = True
+    unlock_date: str = ""
+    prerequisite_id: Optional[int] = None
+
+
+# ===================== COURSE FILE SCHEMAS =====================
+
+class CourseFileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    folder_path: str
+    filename: str
+    file_size_bytes: int
+    owner_id: Optional[int] = None
+    owner_name: Optional[str] = None
+    access_level: str
+    group_id: Optional[int] = None
+    is_archived: bool
+    expires_at: str
+    created_at: Optional[datetime] = None
+
+
+class CourseFileCreate(BaseModel):
+    folder_path: str = "/"
+    filename: str = Field(..., min_length=1, max_length=150)
+    file_size_bytes: int = 1024
+    access_level: str = "public"
+    group_id: Optional[int] = None
+    expires_at: str = ""
+
+
+# ===================== PEER REVIEW & APPEAL SCHEMAS =====================
+
+class PeerReviewOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    submission_id: int
+    assignment_title: Optional[str] = None
+    reviewer_id: Optional[int] = None
+    reviewer_name: Optional[str] = None
+    is_anonymous: bool
+    review_text: str
+    score: Optional[int] = None
+    status: str
+    deadline: str
+    created_at: Optional[datetime] = None
+
+
+class PeerReviewSubmit(BaseModel):
+    review_text: str = Field(..., min_length=5)
+    score: int = Field(..., ge=0, le=100)
+
+
+class GradeAppealOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    submission_id: int
+    assignment_title: Optional[str] = None
+    student_id: int
+    student_name: Optional[str] = None
+    reason: str
+    status: str
+    reviewer_id: Optional[int] = None
+    reviewer_name: Optional[str] = None
+    resolution_notes: str
+    created_at: Optional[datetime] = None
+
+
+class GradeAppealCreate(BaseModel):
+    submission_id: int
+    reason: str = Field(..., min_length=10)
+
+
+class GradeAppealResolve(BaseModel):
+    status: str = Field(..., pattern="^(approved|rejected|under_review)$")
+    resolution_notes: str = Field(..., min_length=5)
+
+
+# ===================== ATTENDANCE SCHEMAS =====================
+
+class AttendanceRecordOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    section_id: Optional[int] = None
+    student_id: int
+    student_name: Optional[str] = None
+    session_date: str
+    status: str
+    is_locked: bool
+    recorded_by_id: Optional[int] = None
+    recorded_by_name: Optional[str] = None
+    notes: str
+    created_at: Optional[datetime] = None
+
+
+class AttendanceRecordCreate(BaseModel):
+    student_id: int
+    session_date: str
+    section_id: Optional[int] = None
+    status: str = Field("present", pattern="^(present|absent|excused|late)$")
+    notes: str = ""
