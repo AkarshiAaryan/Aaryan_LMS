@@ -1,0 +1,50 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Professor
+  - button "User profile menu": DK Dr Kabir Rao @prof02
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: professor"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - img
+  - heading "403 — Access Forbidden" [level=1]
+  - paragraph: Your current authenticated role or course enrolment does not permit access to this resource. This restriction is enforced by the GuardSLM backend authorization layer.
+  - link "Return to Dashboard":
+    - /url: /dashboard
+    - img
+    - text: Return to Dashboard

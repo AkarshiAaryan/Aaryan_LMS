@@ -1,0 +1,90 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": RD Rohan Das @student02
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE302":
+      - /url: /courses/2
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: Networking Protocols Practice Quiz
+  - text: CSE302
+  - img
+  - text: "Time Limit:"
+  - strong: 20 minutes
+  - heading "Networking Protocols Practice Quiz" [level=1]
+  - paragraph: Multiple choice questions testing knowledge of DNS, DHCP, and ARP.
+  - button "Attempt Quiz Now":
+    - img
+    - text: Attempt Quiz Now
+  - paragraph: "Attempts Remaining: 1 of 3"
+  - text: Questions 1 Max Attempts 3 Window Opens 2026-10-01T00:00:00Z Window Closes 2026-12-31T23:59:59Z
+  - heading "Your Previous Attempts" [level=3]
+  - text: 2 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Attempt # Status Score Completion Date"':
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - row "Attempt 1 finished 70% 10/10/2026, 11:15:00 AM":
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "70%"
+        - cell "10/10/2026, 11:15:00 AM"
+      - row "Attempt 2 finished 90% 10/12/2026, 3:18:00 PM":
+        - cell "Attempt 2"
+        - cell "finished"
+        - cell "90%"
+        - cell "10/12/2026, 3:18:00 PM"

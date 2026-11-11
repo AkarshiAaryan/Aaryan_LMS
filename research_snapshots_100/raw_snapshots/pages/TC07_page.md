@@ -1,0 +1,108 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": NK Noor Khan @ta02
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE302":
+      - /url: /courses/2
+    - img
+    - link "Assignments":
+      - /url: /assignments
+    - img
+    - text: Packet Sniffing and Protocol Analysis
+  - text: CSE302
+  - img
+  - text: "Due:"
+  - strong: 2026-12-15T23:59:59Z
+  - heading "Packet Sniffing and Protocol Analysis" [level=1]
+  - text: Maximum Grade 100 pts
+  - heading "Description" [level=4]
+  - paragraph: Analyze Wireshark PCAP traces of TCP 3-way handshakes and TLS 1.3 session setup.
+  - heading "Submission Instructions" [level=4]
+  - text: Provide packet dissection charts and analysis text.
+  - heading "Student Submissions Queue" [level=3]
+  - paragraph: Submissions enrolled in CSE302
+  - text: 3 Submissions
+  - table:
+    - rowgroup:
+      - row "Student Submission Preview Status Grade Actions":
+        - columnheader "Student"
+        - columnheader "Submission Preview"
+        - columnheader "Status"
+        - columnheader "Grade"
+        - columnheader "Actions"
+    - rowgroup:
+      - 'row "Asha Mehta Student ID: #7 Wireshark packet dissection report for TLS 1.3 handshake exchange. submitted Ungraded Grade"':
+        - 'cell "Asha Mehta Student ID: #7"'
+        - cell "Wireshark packet dissection report for TLS 1.3 handshake exchange."
+        - cell "submitted"
+        - cell "Ungraded"
+        - cell "Grade":
+          - button "Grade":
+            - img
+            - text: Grade
+      - 'row "Rohan Das Student ID: #8 TCP sliding window analysis and selective acknowledgment (SACK) behavior trace. graded 91 / 100 Edit Grade"':
+        - 'cell "Rohan Das Student ID: #8"'
+        - cell "TCP sliding window analysis and selective acknowledgment (SACK) behavior trace."
+        - cell "graded"
+        - cell "91 / 100"
+        - cell "Edit Grade":
+          - button "Edit Grade":
+            - img
+            - text: Edit Grade
+      - 'row "Vikram Sen Student ID: #10 ARP cache poisoning analysis and mitigation verification pcap. submitted Ungraded Grade"':
+        - 'cell "Vikram Sen Student ID: #10"'
+        - cell "ARP cache poisoning analysis and mitigation verification pcap."
+        - cell "submitted"
+        - cell "Ungraded"
+        - cell "Grade":
+          - button "Grade":
+            - img
+            - text: Grade

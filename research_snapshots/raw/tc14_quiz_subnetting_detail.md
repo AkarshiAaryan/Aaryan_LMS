@@ -1,0 +1,91 @@
+```yaml
+- generic [ref=f5e3]:
+  - banner [ref=f5e4]:
+    - link "GuardSLM Research LMS" [ref=f5e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f5e11]:
+        - generic [ref=f5e12]: GuardSLM
+        - generic [ref=f5e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f5e19]
+    - generic [ref=f5e20]:
+      - button "Notifications" [ref=f2e21] [cursor=pointer]
+      - generic [ref=f5e26]: Student
+      - button "User profile menu" [ref=f5e31] [cursor=pointer]:
+        - generic [ref=f5e32]: AM
+        - generic [ref=f5e33]:
+          - generic [ref=f5e34]: Asha Mehta
+          - generic [ref=f5e35]: "@student01"
+  - generic [ref=f5e36]:
+    - complementary "Main Navigation" [ref=f5e37]:
+      - generic [ref=f5e39]:
+        - paragraph [ref=f5e40]: Academic Portal
+        - navigation [ref=f5e41]:
+          - link "Dashboard" [ref=f5e42] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f5e49] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f5e53] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f5e58] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f5e64] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f5e69] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f5e74]:
+        - paragraph [ref=f5e75]: GuardSLM Benchmark
+        - paragraph [ref=f5e76]: "Role: student"
+        - paragraph [ref=f5e77]: Backend Enforced v1.0.0
+    - main [ref=f5e78]:
+      - generic [ref=f5e80]:
+        - navigation "Breadcrumb" [ref=f5e82]:
+          - link "LMS" [ref=f5e83] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f5e90] [cursor=pointer]:
+            - /url: /courses
+          - link "CSE302" [ref=f5e93] [cursor=pointer]:
+            - /url: /courses/2
+          - link "Quizzes" [ref=f5e96] [cursor=pointer]:
+            - /url: /quizzes
+          - generic [ref=f5e99]: Subnetting and Routing Quiz
+        - generic [ref=f5e100]:
+          - generic [ref=f5e101]:
+            - generic [ref=f5e102]:
+              - generic [ref=f5e103]:
+                - generic [ref=f5e104]: CSE302
+                - generic [ref=f5e105]:
+                  - text: "Time Limit:"
+                  - strong [ref=f5e109]: 30 minutes
+              - heading "Subnetting and Routing Quiz" [level=1] [ref=f5e110]
+              - paragraph [ref=f5e111]: CIDR prefix calculation and longest prefix match exercises.
+            - generic [ref=f5e112]:
+              - button "Attempt Quiz Now" [ref=f5e113] [cursor=pointer]
+              - paragraph [ref=f5e117]: "Attempts Remaining: 2 of 2"
+          - generic [ref=f5e118]:
+            - generic [ref=f5e119]:
+              - generic [ref=f5e120]: Questions
+              - text: "1"
+            - generic [ref=f5e121]:
+              - generic [ref=f5e122]: Max Attempts
+              - text: "2"
+            - generic [ref=f5e123]:
+              - generic [ref=f5e124]: Window Opens
+              - text: 2026-10-01T00:00:00Z
+            - generic [ref=f5e125]:
+              - generic [ref=f5e126]: Window Closes
+              - text: 2026-12-31T23:59:59Z
+        - generic [ref=f5e127]:
+          - generic [ref=f5e128]:
+            - heading "Your Previous Attempts" [level=3] [ref=f5e129]
+            - generic [ref=f5e130]: 0 Attempt(s) Logged
+          - table [ref=f5e132]:
+            - rowgroup [ref=f5e133]:
+              - row [ref=f5e134]:
+                - 'columnheader "Attempt #" [ref=f5e135]'
+                - columnheader "Status" [ref=f5e136]
+                - columnheader "Score" [ref=f5e137]
+                - columnheader "Completion Date" [ref=f5e138]
+            - rowgroup [ref=f5e139]:
+              - row [ref=f5e140]:
+                - cell "No attempts have been logged for this quiz yet." [ref=f5e141]
+```

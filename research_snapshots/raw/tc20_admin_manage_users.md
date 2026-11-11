@@ -1,0 +1,186 @@
+```yaml
+- generic [ref=f18e3]:
+  - banner [ref=f18e4]:
+    - link "GuardSLM Research LMS" [ref=f18e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f18e11]:
+        - generic [ref=f18e12]: GuardSLM
+        - generic [ref=f18e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f18e19]
+    - generic [ref=f18e20]:
+      - button "Notifications" [ref=f18e21] [cursor=pointer]
+      - generic [ref=f18e26]: Admin
+      - button "User profile menu" [ref=f18e30] [cursor=pointer]:
+        - generic [ref=f18e31]: AA
+        - generic [ref=f18e32]:
+          - generic [ref=f18e33]: Alex Admin
+          - generic [ref=f18e34]: "@admin01"
+  - generic [ref=f18e35]:
+    - complementary "Main Navigation" [ref=f18e36]:
+      - generic [ref=f18e37]:
+        - generic [ref=f18e38]:
+          - paragraph [ref=f18e39]: Academic Portal
+          - navigation [ref=f18e40]:
+            - link "Dashboard" [ref=f18e41] [cursor=pointer]:
+              - /url: /dashboard
+            - link "My Courses" [ref=f18e48] [cursor=pointer]:
+              - /url: /courses
+            - link "Assignments" [ref=f18e52] [cursor=pointer]:
+              - /url: /assignments
+            - link "Quizzes" [ref=f18e57] [cursor=pointer]:
+              - /url: /quizzes
+            - link "Gradebook" [ref=f18e63] [cursor=pointer]:
+              - /url: /grades
+            - link "Resources" [ref=f18e68] [cursor=pointer]:
+              - /url: /resources
+            - link "User Directory" [ref=f18e72] [cursor=pointer]:
+              - /url: /directory
+        - generic [ref=f18e79]:
+          - paragraph [ref=f18e80]:
+            - generic [ref=f18e83]: Site Administration
+          - navigation [ref=f18e84]:
+            - link "Admin Console" [ref=f18e85] [cursor=pointer]:
+              - /url: /admin
+            - link "User Management" [ref=f18e90] [cursor=pointer]:
+              - /url: /admin/users
+            - link "Enrolments" [ref=f18e97] [cursor=pointer]:
+              - /url: /admin/enrolments
+            - link "Audit Logs" [ref=f18e103] [cursor=pointer]:
+              - /url: /admin/logs
+      - generic [ref=f18e110]:
+        - paragraph [ref=f18e111]: GuardSLM Benchmark
+        - paragraph [ref=f18e112]: "Role: admin"
+        - paragraph [ref=f18e113]: Backend Enforced v1.0.0
+    - main [ref=f18e114]:
+      - generic [ref=f18e116]:
+        - generic [ref=f18e117]:
+          - navigation "Breadcrumb" [ref=f18e118]:
+            - link "LMS" [ref=f18e119] [cursor=pointer]:
+              - /url: /dashboard
+            - link "Admin" [ref=f18e126] [cursor=pointer]:
+              - /url: /admin
+            - generic [ref=f18e129]: Users
+          - button "Add User Account" [ref=f18e130] [cursor=pointer]
+        - generic [ref=f18e133]:
+          - heading "User Administration" [level=1] [ref=f18e134]
+          - paragraph [ref=f18e135]: Manage system accounts, assign institutional roles, and toggle account activation.
+        - table [ref=f18e138]:
+          - rowgroup [ref=f18e139]:
+            - row [ref=f18e140]:
+              - columnheader "ID" [ref=f18e141]
+              - columnheader "Full Name" [ref=f18e142]
+              - columnheader "Username" [ref=f18e143]
+              - columnheader "Email" [ref=f18e144]
+              - columnheader "Role" [ref=f18e145]
+              - columnheader "Status" [ref=f18e146]
+              - columnheader "Actions" [ref=f18e147]
+          - rowgroup [ref=f18e148]:
+            - row [ref=f18e149]:
+              - cell "#1" [ref=f18e150]
+              - cell "Alex Admin" [ref=f18e151]
+              - cell "@admin01" [ref=f18e152]
+              - cell "admin01@guardslm.local" [ref=f18e153]
+              - cell "admin" [ref=f18e154]
+              - cell "active" [ref=f18e155]
+              - cell [ref=f18e157]:
+                - button "Edit" [ref=f18e158] [cursor=pointer]
+            - row [ref=f18e162]:
+              - cell "#2" [ref=f18e163]
+              - cell "Dr Mira Shah" [ref=f18e164]
+              - cell "@prof01" [ref=f18e165]
+              - cell "prof01@guardslm.local" [ref=f18e166]
+              - cell "professor" [ref=f18e167]
+              - cell "active" [ref=f18e168]
+              - cell [ref=f18e170]:
+                - button "Edit" [ref=f18e171] [cursor=pointer]
+            - row [ref=f18e175]:
+              - cell "#3" [ref=f18e176]
+              - cell "Dr Kabir Rao" [ref=f18e177]
+              - cell "@prof02" [ref=f18e178]
+              - cell "prof02@guardslm.local" [ref=f18e179]
+              - cell "professor" [ref=f18e180]
+              - cell "active" [ref=f18e181]
+              - cell [ref=f18e183]:
+                - button "Edit" [ref=f18e184] [cursor=pointer]
+            - row [ref=f18e188]:
+              - cell "#4" [ref=f18e189]
+              - cell "Sam Lee" [ref=f18e190]
+              - cell "@ta01" [ref=f18e191]
+              - cell "ta01@guardslm.local" [ref=f18e192]
+              - cell "ta" [ref=f18e193]
+              - cell "active" [ref=f18e194]
+              - cell [ref=f18e196]:
+                - button "Edit" [ref=f18e197] [cursor=pointer]
+            - row [ref=f18e201]:
+              - cell "#5" [ref=f18e202]
+              - cell "Noor Khan" [ref=f18e203]
+              - cell "@ta02" [ref=f18e204]
+              - cell "ta02@guardslm.local" [ref=f18e205]
+              - cell "ta" [ref=f18e206]
+              - cell "active" [ref=f18e207]
+              - cell [ref=f18e209]:
+                - button "Edit" [ref=f18e210] [cursor=pointer]
+            - row [ref=f18e214]:
+              - cell "#6" [ref=f18e215]
+              - cell "Dev Patel" [ref=f18e216]
+              - cell "@ta03" [ref=f18e217]
+              - cell "ta03@guardslm.local" [ref=f18e218]
+              - cell "ta" [ref=f18e219]
+              - cell "active" [ref=f18e220]
+              - cell [ref=f18e222]:
+                - button "Edit" [ref=f18e223] [cursor=pointer]
+            - row [ref=f18e227]:
+              - cell "#7" [ref=f18e228]
+              - cell "Asha Mehta" [ref=f18e229]
+              - cell "@student01" [ref=f18e230]
+              - cell "student01@guardslm.local" [ref=f18e231]
+              - cell "student" [ref=f18e232]
+              - cell "active" [ref=f18e233]
+              - cell [ref=f18e235]:
+                - button "Edit" [ref=f18e236] [cursor=pointer]
+            - row [ref=f18e240]:
+              - cell "#8" [ref=f18e241]
+              - cell "Rohan Das" [ref=f18e242]
+              - cell "@student02" [ref=f18e243]
+              - cell "student02@guardslm.local" [ref=f18e244]
+              - cell "student" [ref=f18e245]
+              - cell "active" [ref=f18e246]
+              - cell [ref=f18e248]:
+                - button "Edit" [ref=f18e249] [cursor=pointer]
+            - row [ref=f18e253]:
+              - cell "#9" [ref=f18e254]
+              - cell "Isha Roy" [ref=f18e255]
+              - cell "@student03" [ref=f18e256]
+              - cell "student03@guardslm.local" [ref=f18e257]
+              - cell "student" [ref=f18e258]
+              - cell "active" [ref=f18e259]
+              - cell [ref=f18e261]:
+                - button "Edit" [ref=f18e262] [cursor=pointer]
+            - row [ref=f18e266]:
+              - cell "#10" [ref=f18e267]
+              - cell "Vikram Sen" [ref=f18e268]
+              - cell "@student04" [ref=f18e269]
+              - cell "student04@guardslm.local" [ref=f18e270]
+              - cell "student" [ref=f18e271]
+              - cell "active" [ref=f18e272]
+              - cell [ref=f18e274]:
+                - button "Edit" [ref=f18e275] [cursor=pointer]
+            - row [ref=f18e279]:
+              - cell "#11" [ref=f18e280]
+              - cell "Tara Bose" [ref=f18e281]
+              - cell "@student05" [ref=f18e282]
+              - cell "student05@guardslm.local" [ref=f18e283]
+              - cell "student" [ref=f18e284]
+              - cell "active" [ref=f18e285]
+              - cell [ref=f18e287]:
+                - button "Edit" [ref=f18e288] [cursor=pointer]
+            - row [ref=f18e292]:
+              - cell "#12" [ref=f18e293]
+              - cell "Arjun Nair" [ref=f18e294]
+              - cell "@student06" [ref=f18e295]
+              - cell "student06@guardslm.local" [ref=f18e296]
+              - cell "student" [ref=f18e297]
+              - cell "active" [ref=f18e298]
+              - cell [ref=f18e300]:
+                - button "Edit" [ref=f18e301] [cursor=pointer]
+```

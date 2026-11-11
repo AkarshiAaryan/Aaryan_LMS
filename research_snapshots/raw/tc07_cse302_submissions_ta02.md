@@ -1,0 +1,85 @@
+```yaml
+- generic [ref=f11e3]:
+  - banner [ref=f11e4]:
+    - link "GuardSLM Research LMS" [ref=f11e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f11e11]:
+        - generic [ref=f11e12]: GuardSLM
+        - generic [ref=f11e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f11e19]
+    - generic [ref=f11e20]:
+      - button "Notifications" [ref=f11e21] [cursor=pointer]
+      - generic [ref=f11e26]: TA
+      - button "User profile menu" [ref=f11e30] [cursor=pointer]:
+        - generic [ref=f11e31]: NK
+        - generic [ref=f11e32]:
+          - generic [ref=f11e33]: Noor Khan
+          - generic [ref=f11e34]: "@ta02"
+  - generic [ref=f11e35]:
+    - complementary "Main Navigation" [ref=f11e36]:
+      - generic [ref=f11e38]:
+        - paragraph [ref=f11e39]: Academic Portal
+        - navigation [ref=f11e40]:
+          - link "Dashboard" [ref=f11e41] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f11e48] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f11e52] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f11e57] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f11e63] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f11e68] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f11e73]:
+        - paragraph [ref=f11e74]: GuardSLM Benchmark
+        - paragraph [ref=f11e75]: "Role: ta"
+        - paragraph [ref=f11e76]: Backend Enforced v1.0.0
+    - main [ref=f11e77]:
+      - generic [ref=f11e79]:
+        - navigation "Breadcrumb" [ref=f11e81]:
+          - link "LMS" [ref=f11e82] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f11e89] [cursor=pointer]:
+            - /url: /courses
+          - link "CSE302" [ref=f11e92] [cursor=pointer]:
+            - /url: /courses/2
+          - link "Assignments" [ref=f11e95] [cursor=pointer]:
+            - /url: /assignments
+          - generic [ref=f11e98]: Packet Sniffing and Protocol Analysis
+        - generic [ref=f11e99]:
+          - generic [ref=f11e100]:
+            - generic [ref=f11e101]:
+              - generic [ref=f11e102]:
+                - generic [ref=f11e103]: CSE302
+                - generic [ref=f11e104]:
+                  - text: "Due:"
+                  - strong [ref=f11e107]: 2026-12-15T23:59:59Z
+              - heading "Packet Sniffing and Protocol Analysis" [level=1] [ref=f11e108]
+            - generic [ref=f11e109]:
+              - generic [ref=f11e110]: Maximum Grade
+              - generic [ref=f11e111]: 100 pts
+          - generic [ref=f11e112]:
+            - heading "Description" [level=4] [ref=f11e113]
+            - paragraph [ref=f11e114]: Analyze Wireshark PCAP traces of TCP 3-way handshakes and TLS 1.3 session setup.
+            - heading "Submission Instructions" [level=4] [ref=f11e115]
+            - generic [ref=f11e116]: Provide packet dissection charts and analysis text.
+        - generic [ref=f11e117]:
+          - generic [ref=f11e118]:
+            - generic [ref=f11e119]:
+              - heading "Student Submissions Queue" [level=3] [ref=f11e120]
+              - paragraph [ref=f11e121]: Submissions enrolled in CSE302
+            - generic [ref=f11e122]: 0 Submissions
+          - table [ref=f11e124]:
+            - rowgroup [ref=f11e125]:
+              - row [ref=f11e126]:
+                - columnheader "Student" [ref=f11e127]
+                - columnheader "Submission Preview" [ref=f11e128]
+                - columnheader "Status" [ref=f11e129]
+                - columnheader "Grade" [ref=f11e130]
+                - columnheader "Actions" [ref=f11e131]
+            - rowgroup [ref=f11e132]:
+              - row [ref=f11e133]:
+                - cell "No submissions recorded for this assignment yet." [ref=f11e134]
+```

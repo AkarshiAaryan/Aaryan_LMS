@@ -1,0 +1,12 @@
+{
+  "name": "guardslm-playwright-tests",
+  "version": "1.0.0",
+  "description": "Automated Playwright smoke and authorization tests for GuardSLM Research LMS",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

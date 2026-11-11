@@ -1,0 +1,62 @@
+```yaml
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - heading "GuardSLM LMS" [level=1] [ref=e10]
+    - paragraph [ref=e11]: Browser Authorization Research Environment
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: Username
+        - textbox "Username" [ref=e20]:
+          - /placeholder: e.g. admin, teacher1, student1
+          - text: student01
+      - generic [ref=e21]:
+        - generic [ref=e22]: Password
+        - textbox "Password" [ref=e27]:
+          - /placeholder: Enter your password
+          - text: GuardSLM2026!
+      - button "Sign In to Dashboard" [ref=e28] [cursor=pointer]
+    - generic [ref=e32]:
+      - paragraph [ref=e33]:
+        - generic [ref=e37]: "Select Pre-seeded Academic Persona:"
+      - generic [ref=e38]:
+        - button "admin01 Alex Admin (Admin)" [ref=e39] [cursor=pointer]:
+          - generic [ref=e40]: admin01
+          - generic [ref=e41]: Alex Admin (Admin)
+        - button "prof01 Dr Mira Shah (301, 303)" [ref=e42] [cursor=pointer]:
+          - generic [ref=e43]: prof01
+          - generic [ref=e44]: Dr Mira Shah (301, 303)
+        - button "prof02 Dr Kabir Rao (302, 401)" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: prof02
+          - generic [ref=e47]: Dr Kabir Rao (302, 401)
+        - button "ta01 Sam Lee (TA:301/Stu:302)" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: ta01
+          - generic [ref=e50]: Sam Lee (TA:301/Stu:302)
+        - button "ta02 Noor Khan (TA:302, 401)" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: ta02
+          - generic [ref=e53]: Noor Khan (TA:302, 401)
+        - button "ta03 Dev Patel (TA:303)" [ref=e54] [cursor=pointer]:
+          - generic [ref=e55]: ta03
+          - generic [ref=e56]: Dev Patel (TA:303)
+        - button "student01 Asha Mehta (All 4)" [ref=e57] [cursor=pointer]:
+          - generic [ref=e58]: student01
+          - generic [ref=e59]: Asha Mehta (All 4)
+        - button "student02 Rohan Das (301, 302)" [ref=e60] [cursor=pointer]:
+          - generic [ref=e61]: student02
+          - generic [ref=e62]: Rohan Das (301, 302)
+        - button "student03 Isha Roy (301, 401)" [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]: student03
+          - generic [ref=e65]: Isha Roy (301, 401)
+        - button "student04 Vikram Sen (302, 303)" [ref=e66] [cursor=pointer]:
+          - generic [ref=e67]: student04
+          - generic [ref=e68]: Vikram Sen (302, 303)
+        - button "student05 Tara Bose (303, 401)" [ref=e69] [cursor=pointer]:
+          - generic [ref=e70]: student05
+          - generic [ref=e71]: Tara Bose (303, 401)
+        - button "student06 Arjun Nair (All 4)" [ref=e72] [cursor=pointer]:
+          - generic [ref=e73]: student06
+          - generic [ref=e74]: Arjun Nair (All 4)
+      - paragraph [ref=e75]:
+        - text: "Standard demo password:"
+        - code [ref=e76]: GuardSLM2026!
+```

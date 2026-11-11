@@ -1,0 +1,75 @@
+```yaml
+- generic [ref=f7e3]:
+  - banner [ref=f7e4]:
+    - link "GuardSLM Research LMS" [ref=f7e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f7e11]:
+        - generic [ref=f7e12]: GuardSLM
+        - generic [ref=f7e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f7e19]
+    - generic [ref=f7e20]:
+      - button "Notifications" [ref=f7e21] [cursor=pointer]
+      - generic [ref=f7e26]: Student
+      - button "User profile menu" [ref=f7e31] [cursor=pointer]:
+        - generic [ref=f7e32]: AM
+        - generic [ref=f7e33]:
+          - generic [ref=f7e34]: Asha Mehta
+          - generic [ref=f7e35]: "@student01"
+  - generic [ref=f7e36]:
+    - complementary "Main Navigation" [ref=f7e37]:
+      - generic [ref=f7e39]:
+        - paragraph [ref=f7e40]: Academic Portal
+        - navigation [ref=f7e41]:
+          - link "Dashboard" [ref=f7e42] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f7e49] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f7e53] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f7e58] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f7e64] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f7e69] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f7e74]:
+        - paragraph [ref=f7e75]: GuardSLM Benchmark
+        - paragraph [ref=f7e76]: "Role: student"
+        - paragraph [ref=f7e77]: Backend Enforced v1.0.0
+    - main [ref=f7e78]:
+      - generic [ref=f7e80]:
+        - navigation "Breadcrumb" [ref=f7e82]:
+          - link "LMS" [ref=f7e83] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f7e90] [cursor=pointer]:
+            - /url: /courses
+          - link "HCI401" [ref=f7e93] [cursor=pointer]:
+            - /url: /courses/4
+          - link "Assignments" [ref=f7e96] [cursor=pointer]:
+            - /url: /assignments
+          - generic [ref=f7e99]: "Group Project: Interactive Prototype"
+        - generic [ref=f7e100]:
+          - generic [ref=f7e101]:
+            - generic [ref=f7e102]:
+              - generic [ref=f7e103]:
+                - generic [ref=f7e104]: HCI401
+                - generic [ref=f7e105]:
+                  - text: "Due:"
+                  - strong [ref=f7e108]: 2026-12-24T23:59:59Z
+              - 'heading "Group Project: Interactive Prototype" [level=1] [ref=f7e109]'
+            - generic [ref=f7e110]:
+              - generic [ref=f7e111]: Maximum Grade
+              - generic [ref=f7e112]: 100 pts
+          - generic [ref=f7e113]:
+            - heading "Description" [level=4] [ref=f7e114]
+            - paragraph [ref=f7e115]: Design and test a high-fidelity interactive prototype in small student teams.
+            - heading "Submission Instructions" [level=4] [ref=f7e116]
+            - generic [ref=f7e117]: Submit your team's Figma link and usability test findings report.
+        - generic [ref=f7e118]:
+          - heading "Your Submission" [level=2] [ref=f7e119]
+          - generic [ref=f7e120]:
+            - generic [ref=f7e121]:
+              - generic [ref=f7e122]: "Response / Source Deliverable Text:"
+              - textbox "Enter or paste your assignment solution text here..." [ref=f7e123]: "Team Alpha Interactive Prototype: Figma prototype URL and usability report for mobile transit app."
+            - button "Resubmit Assignment" [ref=f7e125] [cursor=pointer]
+```

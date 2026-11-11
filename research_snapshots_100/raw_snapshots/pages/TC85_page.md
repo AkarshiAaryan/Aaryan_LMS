@@ -1,0 +1,113 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": SL Sam Lee @ta01
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - text: CSE302
+  - text: "CSE302 Your Role: STUDENT"
+  - img
+  - text: "Professor:"
+  - strong: Dr Kabir Rao
+  - img
+  - text: "TAs:"
+  - strong: Noor Khan
+  - heading "Computer Networks" [level=1]
+  - paragraph: OSI & TCP/IP architectures, packet routing, congestion control, and transport protocols.
+  - button "Overview":
+    - img
+    - text: Overview
+  - button "Assignments (3)":
+    - img
+    - text: Assignments (3)
+  - button "Quizzes (3)":
+    - img
+    - text: Quizzes (3)
+  - button "Grades":
+    - img
+    - text: Grades
+  - button "Resources (4)":
+    - img
+    - text: Resources (4)
+  - button "Policies (8)":
+    - img
+    - text: Policies (8)
+  - heading "Course Learning Resources" [level=3]
+  - text: document
+  - heading "CSE302 Syllabus & Course Policies" [level=4]
+  - paragraph: Network architectures, protocol layers, and laboratory participation requirements.
+  - text: Added by Dr Kabir Rao
+  - link "Access Resource":
+    - /url: https://syllabus.guardslm.local
+    - text: Access Resource
+    - img
+  - text: slides
+  - 'heading "Week 1 Lecture Slides: Introduction to Computer Networks" [level=4]'
+  - paragraph: OSI 7-layer reference model vs TCP/IP protocol suite comparison.
+  - text: Added by Dr Kabir Rao
+  - link "Access Resource":
+    - /url: https://slides.guardslm.local/week1.pdf
+    - text: Access Resource
+    - img
+  - text: document
+  - heading "CSE302 Laboratory Experiment Guide" [level=4]
+  - paragraph: Wireshark packet capture procedures and network interface card configuration.
+  - text: Added by Dr Kabir Rao
+  - link "Access Resource":
+    - /url: https://labs.guardslm.local/lab1.pdf
+    - text: Access Resource
+    - img
+  - text: document
+  - heading "Wireshark Cheat Sheet & Filter Expressions" [level=4]
+  - paragraph: Quick reference for protocol display filters and TCP flow reconstruction.
+  - text: Added by Dr Kabir Rao
+  - link "Access Resource":
+    - /url: https://study.guardslm.local/cse302/wireshark_cheatsheet.pdf
+    - text: Access Resource
+    - img

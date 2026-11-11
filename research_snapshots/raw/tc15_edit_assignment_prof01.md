@@ -1,0 +1,101 @@
+```yaml
+- generic [ref=f16e3]:
+  - banner [ref=f16e4]:
+    - link "GuardSLM Research LMS" [ref=f16e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f16e11]:
+        - generic [ref=f16e12]: GuardSLM
+        - generic [ref=f16e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f16e19]
+    - generic [ref=f16e20]:
+      - button "Notifications" [ref=f16e21] [cursor=pointer]
+      - generic [ref=f16e26]: Professor
+      - button "User profile menu" [ref=f16e30] [cursor=pointer]:
+        - generic [ref=f16e31]: DM
+        - generic [ref=f16e32]:
+          - generic [ref=f16e33]: Dr Mira Shah
+          - generic [ref=f16e34]: "@prof01"
+  - generic [ref=f16e35]:
+    - complementary "Main Navigation" [ref=f16e36]:
+      - generic [ref=f16e38]:
+        - paragraph [ref=f16e39]: Academic Portal
+        - navigation [ref=f16e40]:
+          - link "Dashboard" [ref=f16e41] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f16e48] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f16e52] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f16e57] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f16e63] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f16e68] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f16e73]:
+        - paragraph [ref=f16e74]: GuardSLM Benchmark
+        - paragraph [ref=f16e75]: "Role: professor"
+        - paragraph [ref=f16e76]: Backend Enforced v1.0.0
+    - main [ref=f16e77]:
+      - generic [ref=f16e79]:
+        - navigation "Breadcrumb" [ref=f16e81]:
+          - link "LMS" [ref=f16e82] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f16e89] [cursor=pointer]:
+            - /url: /courses
+          - link "CSE301" [ref=f16e92] [cursor=pointer]:
+            - /url: /courses/1
+          - link "Assignments" [ref=f16e95] [cursor=pointer]:
+            - /url: /assignments
+          - generic [ref=f16e98]: Relational Schema Design & SQL Queries
+        - generic [ref=f16e99]:
+          - generic [ref=f16e100]:
+            - generic [ref=f16e101]:
+              - generic [ref=f16e102]:
+                - generic [ref=f16e103]: CSE301
+                - generic [ref=f16e104]:
+                  - text: "Due:"
+                  - strong [ref=f16e107]: 2026-01-01T23:59:59Z
+              - heading "Relational Schema Design & SQL Queries" [level=1] [ref=f16e108]
+            - generic [ref=f16e109]:
+              - generic [ref=f16e110]: Maximum Grade
+              - generic [ref=f16e111]: 100 pts
+          - generic [ref=f16e112]:
+            - heading "Description" [level=4] [ref=f16e113]
+            - paragraph [ref=f16e114]: Design 3NF schemas and write analytical SQL queries.
+            - heading "Submission Instructions" [level=4] [ref=f16e115]
+            - generic [ref=f16e116]: Submit your SQL schema scripts and query results.
+        - generic [ref=f16e117]:
+          - generic [ref=f16e118]:
+            - generic [ref=f16e119]:
+              - heading "Student Submissions Queue" [level=3] [ref=f16e120]
+              - paragraph [ref=f16e121]: Submissions enrolled in CSE301
+            - generic [ref=f16e122]: 2 Submissions
+          - table [ref=f16e124]:
+            - rowgroup [ref=f16e125]:
+              - row [ref=f16e126]:
+                - columnheader "Student" [ref=f16e127]
+                - columnheader "Submission Preview" [ref=f16e128]
+                - columnheader "Status" [ref=f16e129]
+                - columnheader "Grade" [ref=f16e130]
+                - columnheader "Actions" [ref=f16e131]
+            - rowgroup [ref=f16e132]:
+              - row [ref=f16e133]:
+                - 'cell "Asha Mehta Student ID: #7" [ref=f16e134]':
+                  - text: Asha Mehta
+                  - generic [ref=f16e135]: "Student ID: #7"
+                - cell "-- CSE301 Project 1 CREATE TABLE students (...);" [ref=f16e136]
+                - cell "graded" [ref=f16e137]
+                - cell "88 / 100" [ref=f16e139]
+                - cell [ref=f16e141]:
+                  - button "Edit Grade" [ref=f16e142] [cursor=pointer]
+              - row [ref=f16e147]:
+                - 'cell "Rohan Das Student ID: #8" [ref=f16e148]':
+                  - text: Rohan Das
+                  - generic [ref=f16e149]: "Student ID: #8"
+                - cell "-- Rohan's Submission CREATE TABLE courses (...);" [ref=f16e150]
+                - cell "graded" [ref=f16e151]
+                - cell "82 / 100" [ref=f16e153]
+                - cell [ref=f16e155]:
+                  - button "Edit Grade" [ref=f16e156] [cursor=pointer]
+```

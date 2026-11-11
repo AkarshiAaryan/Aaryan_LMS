@@ -1,0 +1,101 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": NK Noor Khan @ta02
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE302":
+      - /url: /courses/2
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: Subnetting and Routing Quiz
+  - text: CSE302
+  - img
+  - text: "Time Limit:"
+  - strong: 30 minutes
+  - heading "Subnetting and Routing Quiz" [level=1]
+  - paragraph: CIDR prefix calculation and longest prefix match exercises.
+  - text: Questions 1 Max Attempts 2 Window Opens 2026-10-01T00:00:00Z Window Closes 2026-12-31T23:59:59Z
+  - heading "Student Quiz Attempt Records" [level=3]
+  - text: 4 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Student Attempt # Status Score Completion Date"':
+        - columnheader "Student"
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - 'row "Rohan Das Student ID #8 Attempt 1 finished 80% 10/20/2026, 10:28:00 AM"':
+        - 'cell "Rohan Das Student ID #8"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "80%"
+        - cell "10/20/2026, 10:28:00 AM"
+      - 'row "Arjun Nair Student ID #12 Attempt 1 finished 60% 10/21/2026, 2:25:00 PM"':
+        - 'cell "Arjun Nair Student ID #12"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "60%"
+        - cell "10/21/2026, 2:25:00 PM"
+      - 'row "Marcus Chen Student ID #15 Attempt 1 finished 90% 10/28/2026, 1:22:00 PM"':
+        - 'cell "Marcus Chen Student ID #15"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "90%"
+        - cell "10/28/2026, 1:22:00 PM"
+      - 'row "Arjun Nair Student ID #12 Attempt 2 finished 80% 10/25/2026, 5:28:00 PM"':
+        - 'cell "Arjun Nair Student ID #12"'
+        - cell "Attempt 2"
+        - cell "finished"
+        - cell "80%"
+        - cell "10/25/2026, 5:28:00 PM"

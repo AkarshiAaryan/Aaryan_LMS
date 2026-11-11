@@ -1,0 +1,101 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": DP Dev Patel @ta03
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE303":
+      - /url: /courses/3
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: CSE303 Knowledge Assessment
+  - text: CSE303
+  - img
+  - text: "Time Limit:"
+  - strong: 30 minutes
+  - heading "CSE303 Knowledge Assessment" [level=1]
+  - paragraph: Core concepts assessment for Operating Systems.
+  - text: Questions 1 Max Attempts 2 Window Opens 2026-10-01T00:00:00Z Window Closes 2026-12-31T23:59:59Z
+  - heading "Student Quiz Attempt Records" [level=3]
+  - text: 4 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Student Attempt # Status Score Completion Date"':
+        - columnheader "Student"
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - 'row "Asha Mehta Student ID #7 Attempt 1 finished 100% 10/15/2026, 10:25:00 AM"':
+        - 'cell "Asha Mehta Student ID #7"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "100%"
+        - cell "10/15/2026, 10:25:00 AM"
+      - 'row "Vikram Sen Student ID #10 Attempt 1 finished 80% 10/16/2026, 12:28:00 PM"':
+        - 'cell "Vikram Sen Student ID #10"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "80%"
+        - cell "10/16/2026, 12:28:00 PM"
+      - 'row "Tara Bose Student ID #11 Attempt 1 finished 90% 10/17/2026, 3:26:00 PM"':
+        - 'cell "Tara Bose Student ID #11"'
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "90%"
+        - cell "10/17/2026, 3:26:00 PM"
+      - 'row "Kevin Zhao Student ID #23 Attempt 1 in_progress In Progress Incomplete"':
+        - 'cell "Kevin Zhao Student ID #23"'
+        - cell "Attempt 1"
+        - cell "in_progress"
+        - cell "In Progress"
+        - cell "Incomplete"

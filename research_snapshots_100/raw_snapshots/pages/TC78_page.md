@@ -1,0 +1,85 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": TB Tara Bose @student05
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE303":
+      - /url: /courses/3
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: Concurrency & Deadlocks Timed Assessment
+  - text: CSE303
+  - img
+  - text: "Time Limit:"
+  - strong: 25 minutes
+  - heading "Concurrency & Deadlocks Timed Assessment" [level=1]
+  - paragraph: Diagnostic on Coffman deadlock conditions and semaphore invariants.
+  - button "Attempt Quiz Now":
+    - img
+    - text: Attempt Quiz Now
+  - paragraph: "Attempts Remaining: 0 of 1"
+  - text: Questions 1 Max Attempts 1 Window Opens 2026-09-15T00:00:00Z Window Closes 2026-10-15T23:59:59Z
+  - heading "Your Previous Attempts" [level=3]
+  - text: 1 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Attempt # Status Score Completion Date"':
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - row "Attempt 1 finished 80% 9/29/2026, 2:22:00 PM":
+        - cell "Attempt 1"
+        - cell "finished"
+        - cell "80%"
+        - cell "9/29/2026, 2:22:00 PM"

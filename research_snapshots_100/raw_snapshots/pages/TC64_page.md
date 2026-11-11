@@ -1,0 +1,121 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": SL Sam Lee @ta01
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - text: CSE301
+  - text: "CSE301 Your Role: TA"
+  - img
+  - text: "Professor:"
+  - strong: Dr Mira Shah
+  - img
+  - text: "TAs:"
+  - strong: Sam Lee
+  - heading "Database Management Systems" [level=1]
+  - paragraph: Relational algebra, SQL, index architectures, transaction isolation, and query optimization.
+  - button "Overview":
+    - img
+    - text: Overview
+  - button "Assignments (4)":
+    - img
+    - text: Assignments (4)
+  - button "Quizzes (3)":
+    - img
+    - text: Quizzes (3)
+  - button "Grades":
+    - img
+    - text: Grades
+  - button "Resources (7)":
+    - img
+    - text: Resources (7)
+  - button "Policies (5)":
+    - img
+    - text: Policies (5)
+  - heading "Course Assignments" [level=3]
+  - heading "Relational Schema Design & SQL Queries" [level=4]
+  - text: "· Max Grade: 100"
+  - paragraph: Design 3NF schemas and write analytical SQL queries.
+  - img
+  - text: "Due:"
+  - strong: 2026-01-01T23:59:59Z
+  - link "Review Submissions":
+    - /url: /assignments/1
+    - text: Review Submissions
+    - img
+  - heading "B-Tree Indexing Implementation" [level=4]
+  - text: "· Max Grade: 100"
+  - paragraph: Implement a memory-backed B+ tree index structure in Python/C++.
+  - img
+  - text: "Due:"
+  - strong: 2026-12-31T23:59:59Z
+  - link "Review Submissions":
+    - /url: /assignments/2
+    - text: Review Submissions
+    - img
+  - heading "Query Execution Plan Optimization" [level=4]
+  - text: "· Max Grade: 100"
+  - paragraph: Analyze EXPLAIN ANALYZE traces and build optimal multi-table join indexes.
+  - img
+  - text: "Due:"
+  - strong: 2026-12-18T23:59:59Z
+  - link "Review Submissions":
+    - /url: /assignments/5
+    - text: Review Submissions
+    - img
+  - heading "Database Normalization & Transaction Recovery" [level=4]
+  - text: "· Max Grade: 100"
+  - paragraph: Decompose schemas to BCNF and implement write-ahead logging (WAL) simulation.
+  - img
+  - text: "Due:"
+  - strong: 2026-02-15T23:59:59Z
+  - link "Review Submissions":
+    - /url: /assignments/6
+    - text: Review Submissions
+    - img

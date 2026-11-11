@@ -1,0 +1,97 @@
+```yaml
+- generic [ref=f10e3]:
+  - banner [ref=f10e4]:
+    - link "GuardSLM Research LMS" [ref=f10e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f10e11]:
+        - generic [ref=f10e12]: GuardSLM
+        - generic [ref=f10e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f10e19]
+    - generic [ref=f10e20]:
+      - button "Notifications" [ref=f10e21] [cursor=pointer]
+      - generic [ref=f10e26]: TA
+      - button "User profile menu" [ref=f10e30] [cursor=pointer]:
+        - generic [ref=f10e31]: SL
+        - generic [ref=f10e32]:
+          - generic [ref=f10e33]: Sam Lee
+          - generic [ref=f10e34]: "@ta01"
+  - generic [ref=f10e35]:
+    - complementary "Main Navigation" [ref=f10e36]:
+      - generic [ref=f10e38]:
+        - paragraph [ref=f10e39]: Academic Portal
+        - navigation [ref=f10e40]:
+          - link "Dashboard" [ref=f10e41] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f10e48] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f10e52] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f10e57] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f10e63] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f10e68] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f10e73]:
+        - paragraph [ref=f10e74]: GuardSLM Benchmark
+        - paragraph [ref=f10e75]: "Role: ta"
+        - paragraph [ref=f10e76]: Backend Enforced v1.0.0
+    - main [ref=f10e77]:
+      - generic [ref=f10e79]:
+        - navigation "Breadcrumb" [ref=f10e81]:
+          - link "LMS" [ref=f10e82] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f10e89] [cursor=pointer]:
+            - /url: /courses
+          - generic [ref=f10e92]: CSE302
+        - generic [ref=f10e93]:
+          - generic [ref=f10e95]:
+            - generic [ref=f10e96]:
+              - generic [ref=f10e97]: CSE302
+              - generic [ref=f10e98]: "Your Role: STUDENT"
+              - generic [ref=f10e99]:
+                - text: "Professor:"
+                - strong [ref=f10e103]: Dr Kabir Rao
+              - generic [ref=f10e104]:
+                - text: "TAs:"
+                - strong [ref=f10e107]: Noor Khan
+            - heading "Computer Networks" [level=1] [ref=f10e108]
+            - paragraph [ref=f10e109]: OSI & TCP/IP architectures, packet routing, congestion control, and transport protocols.
+          - generic [ref=f10e110]:
+            - button "Overview" [ref=f10e111] [cursor=pointer]
+            - button "Assignments (1)" [ref=f10e115] [cursor=pointer]
+            - button "Quizzes (3)" [ref=f10e120] [cursor=pointer]
+            - button "Grades" [active] [ref=f10e126] [cursor=pointer]
+            - button "Resources (3)" [ref=f10e131] [cursor=pointer]
+            - button "Policies (4)" [ref=f10e135] [cursor=pointer]
+        - generic [ref=f10e141]:
+          - generic [ref=f10e143]:
+            - heading "Course Gradebook" [level=3] [ref=f10e144]
+            - paragraph [ref=f10e145]: Your personal grade records.
+          - table [ref=f10e147]:
+            - rowgroup [ref=f10e148]:
+              - row [ref=f10e149]:
+                - columnheader "Student" [ref=f10e150]
+                - columnheader "Assessments Breakdown" [ref=f10e151]
+                - columnheader "Overall Percentage" [ref=f10e152]
+            - rowgroup [ref=f10e153]:
+              - row [ref=f10e154]:
+                - cell "Sam Lee @ta01" [ref=f10e155]:
+                  - text: Sam Lee
+                  - generic [ref=f10e156]: "@ta01"
+                - 'cell "Packet Sniffing and Protocol Analysis: Not graded Midterm Online Assessment: Not graded Networking Protocols Practice Quiz: Not graded Subnetting and Routing Quiz: Not graded" [ref=f10e157]':
+                  - generic [ref=f10e158]:
+                    - generic [ref=f10e159]:
+                      - generic [ref=f10e160]: "Packet Sniffing and Protocol Analysis:"
+                      - generic [ref=f10e161]: Not graded
+                    - generic [ref=f10e162]:
+                      - generic [ref=f10e163]: "Midterm Online Assessment:"
+                      - generic [ref=f10e164]: Not graded
+                    - generic [ref=f10e165]:
+                      - generic [ref=f10e166]: "Networking Protocols Practice Quiz:"
+                      - generic [ref=f10e167]: Not graded
+                    - generic [ref=f10e168]:
+                      - generic [ref=f10e169]: "Subnetting and Routing Quiz:"
+                      - generic [ref=f10e170]: Not graded
+                - cell "0%" [ref=f10e171]
+```

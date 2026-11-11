@@ -1,0 +1,75 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": LS Lucas Silva @student10
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE301":
+      - /url: /courses/1
+    - img
+    - link "Assignments":
+      - /url: /assignments
+    - img
+    - text: Database Normalization & Transaction Recovery
+  - text: CSE301
+  - img
+  - text: "Due:"
+  - strong: 2026-02-15T23:59:59Z
+  - heading "Database Normalization & Transaction Recovery" [level=1]
+  - text: Maximum Grade 100 pts
+  - heading "Description" [level=4]
+  - paragraph: Decompose schemas to BCNF and implement write-ahead logging (WAL) simulation.
+  - heading "Submission Instructions" [level=4]
+  - text: Submit relational decomposition proof and crash recovery logic.
+  - heading "Your Submission" [level=2]
+  - text: "Response / Source Deliverable Text:"
+  - textbox "Enter or paste your assignment solution text here...": Transaction recovery simulation with checkpointing log parser.
+  - button "Resubmit Assignment":
+    - img
+    - text: Resubmit Assignment

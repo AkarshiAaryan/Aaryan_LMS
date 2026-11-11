@@ -1,0 +1,83 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: TA
+  - button "User profile menu": SL Sam Lee @ta01
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: ta"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE302":
+      - /url: /courses/2
+    - img
+    - link "Assignments":
+      - /url: /assignments
+    - img
+    - text: Packet Sniffing and Protocol Analysis
+  - text: CSE302
+  - img
+  - text: "Due:"
+  - strong: 2026-12-15T23:59:59Z
+  - heading "Packet Sniffing and Protocol Analysis" [level=1]
+  - text: Maximum Grade 100 pts
+  - heading "Description" [level=4]
+  - paragraph: Analyze Wireshark PCAP traces of TCP 3-way handshakes and TLS 1.3 session setup.
+  - heading "Submission Instructions" [level=4]
+  - text: Provide packet dissection charts and analysis text.
+  - heading "Student Submissions Queue" [level=3]
+  - paragraph: Submissions enrolled in CSE302
+  - text: 0 Submissions
+  - table:
+    - rowgroup:
+      - row "Student Submission Preview Status Grade Actions":
+        - columnheader "Student"
+        - columnheader "Submission Preview"
+        - columnheader "Status"
+        - columnheader "Grade"
+        - columnheader "Actions"
+    - rowgroup:
+      - row "No submissions recorded for this assignment yet.":
+        - cell "No submissions recorded for this assignment yet."

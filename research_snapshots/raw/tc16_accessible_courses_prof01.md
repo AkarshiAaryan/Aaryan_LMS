@@ -1,0 +1,75 @@
+```yaml
+- generic [ref=f15e3]:
+  - banner [ref=f15e4]:
+    - link "GuardSLM Research LMS" [ref=f15e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f15e11]:
+        - generic [ref=f15e12]: GuardSLM
+        - generic [ref=f15e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f15e19]
+    - generic [ref=f15e20]:
+      - button "Notifications" [ref=f15e21] [cursor=pointer]
+      - generic [ref=f15e26]: Professor
+      - button "User profile menu" [ref=f15e30] [cursor=pointer]:
+        - generic [ref=f15e31]: DM
+        - generic [ref=f15e32]:
+          - generic [ref=f15e33]: Dr Mira Shah
+          - generic [ref=f15e34]: "@prof01"
+  - generic [ref=f15e35]:
+    - complementary "Main Navigation" [ref=f15e36]:
+      - generic [ref=f15e38]:
+        - paragraph [ref=f15e39]: Academic Portal
+        - navigation [ref=f15e40]:
+          - link "Dashboard" [ref=f15e41] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f15e48] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f15e52] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f15e57] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f15e63] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f15e68] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f15e73]:
+        - paragraph [ref=f15e74]: GuardSLM Benchmark
+        - paragraph [ref=f15e75]: "Role: professor"
+        - paragraph [ref=f15e76]: Backend Enforced v1.0.0
+    - main [ref=f15e77]:
+      - generic [ref=f15e79]:
+        - navigation "Breadcrumb" [ref=f15e81]:
+          - link "LMS" [ref=f15e82] [cursor=pointer]:
+            - /url: /dashboard
+          - generic [ref=f15e89]: Courses
+        - generic [ref=f15e90]:
+          - heading "Course Offerings" [level=1] [ref=f15e91]
+          - paragraph [ref=f15e92]: Courses registered to your authenticated academic profile.
+        - generic [ref=f15e93]:
+          - generic [ref=f15e94]:
+            - generic [ref=f15e95]:
+              - generic [ref=f15e96]:
+                - generic [ref=f15e97]:
+                  - generic [ref=f15e98]: CSE301
+                  - generic [ref=f15e99]: professor
+                - generic [ref=f15e100]: Dr Mira Shah
+              - heading "Database Management Systems" [level=2] [ref=f15e104]
+              - paragraph [ref=f15e105]: Relational algebra, SQL, index architectures, transaction isolation, and query optimization.
+            - generic [ref=f15e106]:
+              - generic [ref=f15e107]: 4 Students Enrolled
+              - link "Enter Course" [ref=f15e108] [cursor=pointer]:
+                - /url: /courses/1
+          - generic [ref=f15e112]:
+            - generic [ref=f15e113]:
+              - generic [ref=f15e114]:
+                - generic [ref=f15e115]:
+                  - generic [ref=f15e116]: CSE303
+                  - generic [ref=f15e117]: professor
+                - generic [ref=f15e118]: Dr Mira Shah
+              - heading "Operating Systems" [level=2] [ref=f15e122]
+              - paragraph [ref=f15e123]: Kernel abstractions, process scheduling, concurrency primitives, and virtual memory.
+            - generic [ref=f15e124]:
+              - generic [ref=f15e125]: 4 Students Enrolled
+              - link "Enter Course" [ref=f15e126] [cursor=pointer]:
+                - /url: /courses/3
+```

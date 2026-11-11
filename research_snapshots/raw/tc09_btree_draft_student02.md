@@ -1,0 +1,75 @@
+```yaml
+- generic [ref=f13e3]:
+  - banner [ref=f13e4]:
+    - link "GuardSLM Research LMS" [ref=f13e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f13e11]:
+        - generic [ref=f13e12]: GuardSLM
+        - generic [ref=f13e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f13e19]
+    - generic [ref=f13e20]:
+      - button "Notifications" [ref=f13e21] [cursor=pointer]
+      - generic [ref=f13e26]: Student
+      - button "User profile menu" [ref=f13e31] [cursor=pointer]:
+        - generic [ref=f13e32]: RD
+        - generic [ref=f13e33]:
+          - generic [ref=f13e34]: Rohan Das
+          - generic [ref=f13e35]: "@student02"
+  - generic [ref=f13e36]:
+    - complementary "Main Navigation" [ref=f13e37]:
+      - generic [ref=f13e39]:
+        - paragraph [ref=f13e40]: Academic Portal
+        - navigation [ref=f13e41]:
+          - link "Dashboard" [ref=f13e42] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f13e49] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f13e53] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f13e58] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f13e64] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f13e69] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f13e74]:
+        - paragraph [ref=f13e75]: GuardSLM Benchmark
+        - paragraph [ref=f13e76]: "Role: student"
+        - paragraph [ref=f13e77]: Backend Enforced v1.0.0
+    - main [ref=f13e78]:
+      - generic [ref=f13e80]:
+        - navigation "Breadcrumb" [ref=f13e82]:
+          - link "LMS" [ref=f13e83] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f13e90] [cursor=pointer]:
+            - /url: /courses
+          - link "CSE301" [ref=f13e93] [cursor=pointer]:
+            - /url: /courses/1
+          - link "Assignments" [ref=f13e96] [cursor=pointer]:
+            - /url: /assignments
+          - generic [ref=f13e99]: B-Tree Indexing Implementation
+        - generic [ref=f13e100]:
+          - generic [ref=f13e101]:
+            - generic [ref=f13e102]:
+              - generic [ref=f13e103]:
+                - generic [ref=f13e104]: CSE301
+                - generic [ref=f13e105]:
+                  - text: "Due:"
+                  - strong [ref=f13e108]: 2026-12-31T23:59:59Z
+              - heading "B-Tree Indexing Implementation" [level=1] [ref=f13e109]
+            - generic [ref=f13e110]:
+              - generic [ref=f13e111]: Maximum Grade
+              - generic [ref=f13e112]: 100 pts
+          - generic [ref=f13e113]:
+            - heading "Description" [level=4] [ref=f13e114]
+            - paragraph [ref=f13e115]: Implement a memory-backed B+ tree index structure in Python/C++.
+            - heading "Submission Instructions" [level=4] [ref=f13e116]
+            - generic [ref=f13e117]: Implement insert, search, and leaf splitting operations.
+        - generic [ref=f13e118]:
+          - heading "Your Submission" [level=2] [ref=f13e119]
+          - generic [ref=f13e120]:
+            - generic [ref=f13e121]:
+              - generic [ref=f13e122]: "Response / Source Deliverable Text:"
+              - textbox "Enter or paste your assignment solution text here..." [ref=f13e123]: "Draft B-Tree pseudo-code: class BTreeNode { ... }"
+            - button "Resubmit Assignment" [ref=f13e125] [cursor=pointer]
+```

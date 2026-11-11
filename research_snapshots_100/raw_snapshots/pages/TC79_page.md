@@ -1,0 +1,113 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": AM Asha Mehta @student01
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - text: CSE301
+  - text: "CSE301 Your Role: STUDENT"
+  - img
+  - text: "Professor:"
+  - strong: Dr Mira Shah
+  - img
+  - text: "TAs:"
+  - strong: Sam Lee
+  - heading "Database Management Systems" [level=1]
+  - paragraph: Relational algebra, SQL, index architectures, transaction isolation, and query optimization.
+  - button "Overview":
+    - img
+    - text: Overview
+  - button "Assignments (4)":
+    - img
+    - text: Assignments (4)
+  - button "Quizzes (3)":
+    - img
+    - text: Quizzes (3)
+  - button "Grades":
+    - img
+    - text: Grades
+  - button "Resources (4)":
+    - img
+    - text: Resources (4)
+  - button "Policies (5)":
+    - img
+    - text: Policies (5)
+  - heading "Course Learning Resources" [level=3]
+  - text: document
+  - heading "CSE301 Syllabus & Course Policies" [level=4]
+  - paragraph: Course learning outcomes, grading schemes, and contact hours.
+  - text: Added by Dr Mira Shah
+  - link "Access Resource":
+    - /url: https://syllabus.guardslm.local
+    - text: Access Resource
+    - img
+  - text: slides
+  - 'heading "Week 1 Lecture Slides: Introduction to Database Management Systems" [level=4]'
+  - paragraph: Relational database model, entity relationships, and architectural foundations.
+  - text: Added by Dr Mira Shah
+  - link "Access Resource":
+    - /url: https://slides.guardslm.local/week1.pdf
+    - text: Access Resource
+    - img
+  - text: document
+  - heading "CSE301 Laboratory Experiment Guide" [level=4]
+  - paragraph: Hands-on SQL schema generation and query execution tuning.
+  - text: Added by Dr Mira Shah
+  - link "Access Resource":
+    - /url: https://labs.guardslm.local/lab1.pdf
+    - text: Access Resource
+    - img
+  - text: document
+  - heading "CSE301 Midterm Examination Study Guide" [level=4]
+  - paragraph: Summary of relational algebra, B+ tree properties, and ACID semantics.
+  - text: Added by Dr Mira Shah
+  - link "Access Resource":
+    - /url: https://study.guardslm.local/cse301/midterm_guide.pdf
+    - text: Access Resource
+    - img

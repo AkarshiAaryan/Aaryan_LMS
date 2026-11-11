@@ -1,0 +1,80 @@
+```yaml
+- generic [ref=f14e3]:
+  - banner [ref=f14e4]:
+    - link "GuardSLM Research LMS" [ref=f14e6] [cursor=pointer]:
+      - /url: /dashboard
+      - generic [ref=f14e11]:
+        - generic [ref=f14e12]: GuardSLM
+        - generic [ref=f14e13]: Research LMS
+    - textbox "Search courses, assignments, or records..." [ref=f14e19]
+    - generic [ref=f14e20]:
+      - button "Notifications" [ref=f14e21] [cursor=pointer]
+      - generic [ref=f14e26]: Student
+      - button "User profile menu" [ref=f14e31] [cursor=pointer]:
+        - generic [ref=f14e32]: RD
+        - generic [ref=f14e33]:
+          - generic [ref=f14e34]: Rohan Das
+          - generic [ref=f14e35]: "@student02"
+  - generic [ref=f14e36]:
+    - complementary "Main Navigation" [ref=f14e37]:
+      - generic [ref=f14e39]:
+        - paragraph [ref=f14e40]: Academic Portal
+        - navigation [ref=f14e41]:
+          - link "Dashboard" [ref=f14e42] [cursor=pointer]:
+            - /url: /dashboard
+          - link "My Courses" [ref=f14e49] [cursor=pointer]:
+            - /url: /courses
+          - link "Assignments" [ref=f14e53] [cursor=pointer]:
+            - /url: /assignments
+          - link "Quizzes" [ref=f14e58] [cursor=pointer]:
+            - /url: /quizzes
+          - link "Gradebook" [ref=f14e64] [cursor=pointer]:
+            - /url: /grades
+          - link "Resources" [ref=f14e69] [cursor=pointer]:
+            - /url: /resources
+      - generic [ref=f14e74]:
+        - paragraph [ref=f14e75]: GuardSLM Benchmark
+        - paragraph [ref=f14e76]: "Role: student"
+        - paragraph [ref=f14e77]: Backend Enforced v1.0.0
+    - main [ref=f14e78]:
+      - generic [ref=f14e80]:
+        - navigation "Breadcrumb" [ref=f14e82]:
+          - link "LMS" [ref=f14e83] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Courses" [ref=f14e90] [cursor=pointer]:
+            - /url: /courses
+          - link "CSE301" [ref=f14e93] [cursor=pointer]:
+            - /url: /courses/1
+          - link "Assignments" [ref=f14e96] [cursor=pointer]:
+            - /url: /assignments
+          - generic [ref=f14e99]: Relational Schema Design & SQL Queries
+        - generic [ref=f14e100]:
+          - generic [ref=f14e101]:
+            - generic [ref=f14e102]:
+              - generic [ref=f14e103]:
+                - generic [ref=f14e104]: CSE301
+                - generic [ref=f14e105]:
+                  - text: "Due:"
+                  - strong [ref=f14e108]: 2026-01-01T23:59:59Z
+              - heading "Relational Schema Design & SQL Queries" [level=1] [ref=f14e109]
+            - generic [ref=f14e110]:
+              - generic [ref=f14e111]: Maximum Grade
+              - generic [ref=f14e112]: 100 pts
+          - generic [ref=f14e113]:
+            - heading "Description" [level=4] [ref=f14e114]
+            - paragraph [ref=f14e115]: Design 3NF schemas and write analytical SQL queries.
+            - heading "Submission Instructions" [level=4] [ref=f14e116]
+            - generic [ref=f14e117]: Submit your SQL schema scripts and query results.
+        - generic [ref=f14e118]:
+          - heading "Your Submission" [level=2] [ref=f14e119]
+          - generic [ref=f14e120]:
+            - generic [ref=f14e121]:
+              - generic [ref=f14e122]: Graded Submission
+              - generic [ref=f14e126]: 82 / 100
+            - generic [ref=f14e127]:
+              - strong [ref=f14e128]: "Instructor Feedback:"
+              - text: Clean schema. Minor syntax errors in subqueries.
+          - generic [ref=f14e130]:
+            - generic [ref=f14e131]: "Response / Source Deliverable Text:"
+            - textbox "Enter or paste your assignment solution text here..." [disabled] [ref=f14e132]: "-- Rohan's Submission CREATE TABLE courses (...);"
+```

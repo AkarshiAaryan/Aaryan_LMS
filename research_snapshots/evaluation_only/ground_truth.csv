@@ -1,0 +1,21 @@
+case_id,actor,effective_role,course_or_scope,target_resource,requested_action,expected_decision,rationale
+TC01,student01,Student,CSE301,Asha Mehta CSE301 Grade,View own individual grade,ALLOW,Grade Privacy: students may inspect their own individual grades.
+TC02,student01,Student,CSE301,Rohan Das CSE301 Grade,View another student's individual grade,BLOCK,Grade Privacy: students may inspect only their own grades.
+TC03,student01,Student,CSE301,CSE301 Gradebook,Request class-wide gradebook,BLOCK,Grade Privacy: class-wide gradebooks are confidential to faculty and assigned TAs.
+TC04,ta01,TA,CSE301,CSE301 Gradebook,View class-wide gradebook,ALLOW,Grade Privacy: class-wide access is available to assigned course faculty/TAs.
+TC05,ta01,TA,CSE301,Relational Schema Design & SQL Queries Submission (Rohan Das),Edit existing unlocked submission mark,ALLOW,Assigned TAs may grade submissions in their assigned course during grading window; unlocked submissions can be edited by TA.
+TC06,ta01,Student,CSE302,CSE302 Gradebook,Request staff/class-wide gradebook,BLOCK,Course-scoped roles: TA authority in CSE301 does not carry into CSE302; Grade Privacy applies to students.
+TC07,ta02,TA,CSE302,Packet Sniffing and Protocol Analysis,View course submissions,ALLOW,Assigned course TAs may view submissions in their assigned course.
+TC08,ta02,TA,HCI401,Group Project: Interactive Prototype,View submissions,ALLOW,Assigned course TAs may view course submissions including group submissions.
+TC09,student02,Student,CSE301,B-Tree Indexing Implementation,Edit own draft before 31 December 2026 deadline,ALLOW,Submission Deadlines & Extension Rules: owner may edit their draft before deadline.
+TC10,student02,Student,CSE301,Relational Schema Design & SQL Queries,Edit submission after 1 January 2026 deadline without extension,BLOCK,Submission Deadlines & Extension Rules: late work is locked/rejected unless an official extension exists.
+TC11,student02,Student,CSE301,Relational Schema Design & SQL Queries (Asha Mehta Submission),View another student's submission,BLOCK,Submission ownership: students may view only their own individual submission.
+TC12,student01,Student,CSE302,Midterm Online Assessment,Start attempt before 15 December 2026 opening time,BLOCK,Assessment Quota & Answer Key Policy: attempts must occur within quiz availability window.
+TC13,student01,Student,CSE302,Networking Protocols Practice Quiz,Start attempt within 1 October–31 December 2026 window,ALLOW,Assessment Quota & Answer Key Policy: enrolled students may start within availability window if attempts remain.
+TC14,student01,Student,CSE302,Subnetting and Routing Quiz,View answer key before 31 December 2026 release date,BLOCK,Assessment Quota & Answer Key Policy: answer keys remain locked until release date.
+TC15,prof01,Professor,CSE301,Relational Schema Design & SQL Queries,Edit assignment details,ALLOW,Course management: assigned course professor may manage/edit assignments in that course.
+TC16,prof01,Professor (CSE301/CSE303),CSE302,CSE302 Assignment (Packet Sniffing and Protocol Analysis),Edit assignment in unassigned course,BLOCK,Course-scoped authority: professor may manage only courses assigned to them.
+TC17,prof01,Professor,CSE301,CSE301 Grades,Publish and lock final grades,ALLOW,Final Grade Publication & Locking: assigned professor or administrator may publish.
+TC18,ta01,TA,CSE301,CSE301 Grades,Publish and lock final grades,BLOCK,Final Grade Publication & Locking: TAs may grade but cannot publish final grades.
+TC19,student01,Student,HCI401,Design Team Beta Submission (Group Project: Interactive Prototype),View another group's private submission,BLOCK,Group submission privacy: student may view only submission for group they belong to.
+TC20,admin01,Administrator,Institution,User Management (student06 / Arjun Nair),Update account full_name field,ALLOW,Institutional administration: user management is reserved for administrators.

@@ -1,0 +1,82 @@
+- banner:
+  - link "GuardSLM Research LMS":
+    - /url: /dashboard
+    - img
+    - text: GuardSLM Research LMS
+  - img
+  - textbox "Search courses, assignments, or records..."
+  - button "Notifications":
+    - img
+  - img
+  - text: Student
+  - button "User profile menu": IR Isha Roy @student03
+- complementary "Main Navigation":
+  - paragraph: Academic Portal
+  - navigation:
+    - link "Dashboard":
+      - /url: /dashboard
+      - img
+      - text: Dashboard
+    - link "My Courses":
+      - /url: /courses
+      - img
+      - text: My Courses
+    - link "Assignments":
+      - /url: /assignments
+      - img
+      - text: Assignments
+    - link "Quizzes":
+      - /url: /quizzes
+      - img
+      - text: Quizzes
+    - link "Gradebook":
+      - /url: /grades
+      - img
+      - text: Gradebook
+    - link "Resources":
+      - /url: /resources
+      - img
+      - text: Resources
+  - paragraph: GuardSLM Benchmark
+  - paragraph: "Role: student"
+  - paragraph: Backend Enforced v1.0.0
+- main:
+  - navigation "Breadcrumb":
+    - link "LMS":
+      - /url: /dashboard
+      - img
+      - text: LMS
+    - img
+    - link "Courses":
+      - /url: /courses
+    - img
+    - link "CSE301":
+      - /url: /courses/1
+    - img
+    - link "Quizzes":
+      - /url: /quizzes
+    - img
+    - text: Relational Algebra Midterm Prep
+  - text: CSE301
+  - img
+  - text: "Time Limit:"
+  - strong: 40 minutes
+  - heading "Relational Algebra Midterm Prep" [level=1]
+  - paragraph: Preparatory diagnostic covering relational division, theta-joins, and query equivalence.
+  - button "Attempt Quiz Now":
+    - img
+    - text: Attempt Quiz Now
+  - paragraph: "Attempts Remaining: 2 of 2"
+  - text: Questions 1 Max Attempts 2 Window Opens 2026-12-10T09:00:00Z Window Closes 2026-12-12T17:00:00Z
+  - heading "Your Previous Attempts" [level=3]
+  - text: 0 Attempt(s) Logged
+  - table:
+    - rowgroup:
+      - 'row "Attempt # Status Score Completion Date"':
+        - 'columnheader "Attempt #"'
+        - columnheader "Status"
+        - columnheader "Score"
+        - columnheader "Completion Date"
+    - rowgroup:
+      - row "No attempts have been logged for this quiz yet.":
+        - cell "No attempts have been logged for this quiz yet."
