@@ -19,7 +19,7 @@ def utc_now() -> datetime:
 
 
 def log_activity(
-    db: Session,
+    db: Optional[Session],
     user: Optional[User],
     action: str,
     resource_type: str,
@@ -28,8 +28,11 @@ def log_activity(
     http_status: int = 200,
     detail: str = "",
 ) -> None:
-    """Helper to record audit log for research experiments."""
+    """Helper to record audit log in an isolated session so business transactions remain unaffected."""
+    audit_db = None
     try:
+        from .database import SessionLocal
+        audit_db = SessionLocal()
         log_entry = ActivityLog(
             user_id=user.id if user else None,
             username=user.username if user else "anonymous",
@@ -41,20 +44,31 @@ def log_activity(
             http_status=http_status,
             detail=detail,
         )
-        db.add(log_entry)
-        db.commit()
+        audit_db.add(log_entry)
+        audit_db.commit()
     except Exception:
-        db.rollback()
+        if audit_db:
+            audit_db.rollback()
+    finally:
+        if audit_db:
+            audit_db.close()
 
 
 # ===================== COURSE-SPECIFIC ROLE EVALUATION =====================
 
-def get_user_course_role(course_id: int, user: User, db: Session) -> Optional[str]:
+def get_user_course_role(course_id: int, user: User, db: Session, include_suspended: bool = False) -> Optional[str]:
     """
     Determine the user's role specifically in the context of the requested course.
-    Returns: 'admin', 'professor', 'ta', 'student', or None.
-    Course role comes from course assignment/enrollment, NOT global label alone.
+    Returns: 'admin', 'professor', 'ta', 'student', or None (or 'suspended' if include_suspended=True).
+    Enforces active enrollment lifecycle status:
+      - 'active': normal course role ('student', 'ta', 'professor').
+      - 'suspended': blocked from normal interactions. Returns 'suspended' if include_suspended else None.
+      - 'revoked': no course access whatsoever. Returns None.
+    Inactive user accounts (user.is_active is False) receive None.
     """
+    if not user.is_active:
+        return None
+
     if user.role == "admin":
         return "admin"
 
@@ -62,7 +76,7 @@ def get_user_course_role(course_id: int, user: User, db: Session) -> Optional[st
     if not course:
         return None
 
-    # Check direct instructor designation
+    # Check direct instructor designation (only if professor account is active)
     if course.teacher_id == user.id:
         return "professor"
 
@@ -74,12 +88,28 @@ def get_user_course_role(course_id: int, user: User, db: Session) -> Optional[st
         )
     )
     if enrollment:
+        status_val = (enrollment.status or "active").lower()
+        if status_val == "revoked":
+            return None
+        if status_val == "suspended":
+            return "suspended" if include_suspended else None
+
         role = enrollment.role.lower()
         if role in ["professor", "teacher"]:
             return "professor"
         return role
 
     return None
+
+
+def get_user_course_enrollment(course_id: int, user: User, db: Session) -> Optional[Enrollment]:
+    """Retrieve raw Enrollment record for user in course."""
+    return db.scalar(
+        select(Enrollment).where(
+            Enrollment.course_id == course_id,
+            Enrollment.user_id == user.id,
+        )
+    )
 
 
 # ===================== BASE ROLE CHECKS =====================
@@ -114,7 +144,7 @@ def require_admin(
 # ===================== RESOURCE ACCESS GUARDS =====================
 
 def verify_course_access(course_id: int, user: User, db: Session) -> Course:
-    """Verify that user is authorized to access course (Admin, Professor, TA, or Student)."""
+    """Verify that user is authorized to access course (Admin, Professor, TA, or Student with active enrollment)."""
     course = db.get(Course, course_id)
     if not course:
         raise HTTPException(
@@ -122,23 +152,75 @@ def verify_course_access(course_id: int, user: User, db: Session) -> Course:
             detail=f"Course with ID {course_id} does not exist.",
         )
 
-    course_role = get_user_course_role(course_id, user, db)
-    if course_role in ["admin", "professor", "ta", "student"]:
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is deactivated.",
+        )
+
+    if user.role == "admin":
         return course
 
-    log_activity(
-        db=db,
-        user=user,
-        action="VIEW_COURSE",
-        resource_type="course",
-        resource_id=str(course_id),
-        outcome="BLOCK",
-        http_status=status.HTTP_403_FORBIDDEN,
-        detail=f"User {user.username} denied access to course {course.code} (no membership).",
-    )
+    if course.teacher_id == user.id:
+        return course
+
+    enrollment = get_user_course_enrollment(course_id, user, db)
+    if not enrollment:
+        log_activity(
+            db=db,
+            user=user,
+            action="VIEW_COURSE",
+            resource_type="course",
+            resource_id=str(course_id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user.username} denied access to course {course.code} (no membership).",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: you do not have permission to access this course.",
+        )
+
+    status_val = (enrollment.status or "active").lower()
+    if status_val == "revoked":
+        log_activity(
+            db=db,
+            user=user,
+            action="VIEW_COURSE",
+            resource_type="course",
+            resource_id=str(course_id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user.username} denied access to course {course.code} (enrollment revoked).",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: your course enrollment has been revoked.",
+        )
+
+    if status_val == "suspended":
+        log_activity(
+            db=db,
+            user=user,
+            action="VIEW_COURSE",
+            resource_type="course",
+            resource_id=str(course_id),
+            outcome="BLOCK",
+            http_status=status.HTTP_403_FORBIDDEN,
+            detail=f"User {user.username} denied access to course {course.code} (enrollment suspended).",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: your course enrollment has been suspended.",
+        )
+
+    course_role = enrollment.role.lower()
+    if course_role in ["professor", "teacher", "ta", "student"]:
+        return course
+
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="Access denied: you do not have permission to access this course.",
+        detail="Access denied: invalid course role.",
     )
 
 
@@ -175,7 +257,7 @@ def verify_course_professor_or_admin(course_id: int, user: User, db: Session) ->
 
 
 def verify_course_staff(course_id: int, user: User, db: Session) -> Course:
-    """Verify that user is course staff (Admin, assigned Professor, or assigned TA)."""
+    """Verify that user is course staff (Admin, assigned Professor, or assigned active TA)."""
     course = db.get(Course, course_id)
     if not course:
         raise HTTPException(
@@ -186,6 +268,13 @@ def verify_course_staff(course_id: int, user: User, db: Session) -> Course:
     course_role = get_user_course_role(course_id, user, db)
     if course_role in ["admin", "professor", "ta"]:
         return course
+
+    enrollment = get_user_course_enrollment(course_id, user, db)
+    if enrollment and enrollment.status in ["suspended", "revoked"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: course staff privileges are {enrollment.status} in this course.",
+        )
 
     log_activity(
         db=db,
@@ -204,7 +293,7 @@ def verify_course_staff(course_id: int, user: User, db: Session) -> Course:
 
 
 def verify_course_student_enrollment(course_id: int, user: User, db: Session) -> Course:
-    """Verify that user is enrolled as a student in this specific course."""
+    """Verify that user is enrolled as an active student in this specific course."""
     course = db.get(Course, course_id)
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found.")
@@ -212,6 +301,18 @@ def verify_course_student_enrollment(course_id: int, user: User, db: Session) ->
     course_role = get_user_course_role(course_id, user, db)
     if course_role == "student":
         return course
+
+    enrollment = get_user_course_enrollment(course_id, user, db)
+    if enrollment and enrollment.status == "suspended":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: your course enrollment has been suspended.",
+        )
+    if enrollment and enrollment.status == "revoked":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: your course enrollment has been revoked.",
+        )
 
     log_activity(
         db=db,
@@ -221,7 +322,7 @@ def verify_course_student_enrollment(course_id: int, user: User, db: Session) ->
         resource_id=str(course_id),
         outcome="BLOCK",
         http_status=status.HTTP_403_FORBIDDEN,
-        detail=f"User {user.username} is not enrolled as a student in {course.code} (role: {course_role}).",
+        detail=f"User {user.username} is not enrolled as an active student in {course.code} (role: {course_role}).",
     )
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,

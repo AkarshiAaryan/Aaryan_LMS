@@ -21,6 +21,12 @@ import {
   Lock,
   KeyRound,
   FileText,
+  Layers,
+  MessageSquare,
+  CalendarCheck,
+  Scale,
+  Download,
+  File,
 } from 'lucide-react';
 
 export default function CourseDetail() {
@@ -38,6 +44,11 @@ export default function CourseDetail() {
   const [announcements, setAnnouncements] = useState([]);
   const [policies, setPolicies] = useState([]);
   const [gradebookRows, setGradebookRows] = useState([]);
+  const [discussions, setDiscussions] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [appeals, setAppeals] = useState([]);
   const [publishing, setPublishing] = useState(false);
   const [publishMessage, setPublishMessage] = useState('');
 
@@ -63,9 +74,27 @@ export default function CourseDetail() {
 
       try {
         const gradesRes = await api.get(`/courses/${id}/grades`);
-        setGradebookRows(gradesRes.data);
+        const rows = Array.isArray(gradesRes.data) ? gradesRes.data : (gradesRes.data?.students || gradesRes.data?.rows || []);
+        setGradebookRows(rows);
       } catch (gErr) {
         console.error("Gradebook fetch error:", gErr);
+      }
+
+      try {
+        const [discRes, modRes, fileRes, attRes, appRes] = await Promise.allSettled([
+          api.get(`/courses/${id}/discussions`),
+          api.get(`/courses/${id}/modules`),
+          api.get(`/courses/${id}/files`),
+          api.get(`/courses/${id}/attendance`),
+          api.get(`/courses/${id}/appeals`),
+        ]);
+        if (discRes.status === 'fulfilled') setDiscussions(discRes.value.data);
+        if (modRes.status === 'fulfilled') setModules(modRes.value.data);
+        if (fileRes.status === 'fulfilled') setFiles(fileRes.value.data);
+        if (attRes.status === 'fulfilled') setAttendance(attRes.value.data);
+        if (appRes.status === 'fulfilled') setAppeals(appRes.value.data);
+      } catch (modErr) {
+        console.error("Optional module fetch error:", modErr);
       }
     } catch (err) {
       setError(
@@ -88,7 +117,8 @@ export default function CourseDetail() {
       setPublishMessage(res.data?.message || 'Final grades published successfully.');
       // Refresh grades
       const gradesRes = await api.get(`/courses/${id}/grades`);
-      setGradebookRows(gradesRes.data);
+      const rows = Array.isArray(gradesRes.data) ? gradesRes.data : (gradesRes.data?.students || gradesRes.data?.rows || []);
+      setGradebookRows(rows);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to publish grades.');
     } finally {
@@ -132,9 +162,14 @@ export default function CourseDetail() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BookOpen },
+    { id: 'modules', label: `Modules (${modules.length})`, icon: Layers },
     { id: 'assignments', label: `Assignments (${assignments.length})`, icon: ClipboardList },
     { id: 'quizzes', label: `Quizzes (${quizzes.length})`, icon: FileCheck2 },
+    { id: 'discussions', label: `Discussions (${discussions.length})`, icon: MessageSquare },
+    { id: 'files', label: `Course Files (${files.length})`, icon: FolderOpen },
     { id: 'grades', label: 'Grades', icon: Award },
+    { id: 'attendance', label: `Attendance (${attendance.length})`, icon: CalendarCheck },
+    { id: 'appeals', label: `Appeals (${appeals.length})`, icon: Scale },
     { id: 'resources', label: `Resources (${resources.length})`, icon: FolderOpen },
     { id: 'policies', label: `Policies (${policies.length})`, icon: FileText },
   ];
@@ -532,6 +567,264 @@ export default function CourseDetail() {
                   <p className="col-span-2 text-center text-xs text-slate-400 italic py-6">No policies configured for this course.</p>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== MODULES TAB ===================== */}
+        {activeTab === 'modules' && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" data-testid="course-modules-panel">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Curricular Learning Modules</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Sequential course modules and lesson units</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">{modules.length} Module(s)</span>
+            </div>
+            <div className="divide-y divide-slate-100 p-6 space-y-6">
+              {modules.map((m) => (
+                <div key={m.id} className="p-5 rounded-xl bg-slate-50 border border-slate-200" data-testid={`module-item-${m.id}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-100 text-indigo-800">
+                        Module {m.order_index}
+                      </span>
+                      {m.unlock_at && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1">
+                          <Lock size={10} /> Unlock: {m.unlock_at}
+                        </span>
+                      )}
+                      <h4 className="font-bold text-base text-slate-900">{m.title}</h4>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 mb-4">{m.description}</p>
+                  {m.lessons && m.lessons.length > 0 && (
+                    <div className="mt-3 pl-4 border-l-2 border-indigo-200 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Lessons:</span>
+                      {m.lessons.map((les) => (
+                        <div key={les.id} className="flex items-center justify-between text-xs py-1 text-slate-700">
+                          <span className="font-medium">• {les.title}</span>
+                          <span className="text-slate-400 text-[11px]">{les.duration_minutes} mins</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {modules.length === 0 && (
+                <p className="p-8 text-center text-xs text-slate-400 italic">No learning modules published for this course yet.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===================== DISCUSSIONS TAB ===================== */}
+        {activeTab === 'discussions' && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" data-testid="course-discussions-panel">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Course Discussion Forums</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Questions, thread discussions, and announcements</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">{discussions.length} Thread(s)</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {discussions.map((d) => (
+                <div key={d.id} className="p-6 hover:bg-slate-50/50 transition-colors flex items-start justify-between gap-4" data-testid={`discussion-thread-${d.id}`}>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                      {d.is_pinned && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">
+                          Pinned
+                        </span>
+                      )}
+                      {d.visibility_level === 'staff_only' && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800 flex items-center gap-1">
+                          <Lock size={10} /> Staff Only
+                        </span>
+                      )}
+                      {d.visibility_level === 'private' && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-800 flex items-center gap-1">
+                          <KeyRound size={10} /> Private
+                        </span>
+                      )}
+                      <h4 className="font-bold text-slate-900 text-base">{d.title}</h4>
+                    </div>
+                    <span className="text-xs text-slate-400 block mb-2">
+                      Posted by <strong className="text-slate-700">{d.author_name}</strong> on {new Date(d.created_at).toLocaleDateString()}
+                    </span>
+                    <p className="text-xs text-slate-600 line-clamp-2">{d.initial_post?.content}</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">
+                    {d.reply_count} reply(s)
+                  </span>
+                </div>
+              ))}
+              {discussions.length === 0 && (
+                <p className="p-8 text-center text-xs text-slate-400 italic">No discussions in this course.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ===================== FILES TAB ===================== */}
+        {activeTab === 'files' && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" data-testid="course-files-panel">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Course Files Repository</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Download syllabus, handouts, and academic materials</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">{files.length} File(s)</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-6">File Name</th>
+                    <th className="py-3 px-6">Access Level</th>
+                    <th className="py-3 px-6">Size</th>
+                    <th className="py-3 px-6">Uploaded By</th>
+                    <th className="py-3 px-6 text-right">Download</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {files.map((f) => (
+                    <tr key={f.id} className="hover:bg-slate-50/50" data-testid={`file-row-${f.id}`}>
+                      <td className="py-4 px-6 font-bold text-slate-900 flex items-center gap-2">
+                        <File size={16} className="text-slate-400" />
+                        <span>{f.filename}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          f.access_level === 'public' ? 'bg-emerald-100 text-emerald-800' :
+                          f.access_level === 'students' ? 'bg-indigo-100 text-indigo-800' :
+                          f.access_level === 'staff_only' ? 'bg-red-100 text-red-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {f.access_level}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-xs text-slate-500 font-mono">
+                        {Math.round(f.file_size / 1024)} KB
+                      </td>
+                      <td className="py-4 px-6 text-xs text-slate-600">
+                        {f.uploader_name}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <a
+                          href={`/api/files/${f.id}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          data-testid={`download-file-btn-${f.id}`}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
+                        >
+                          <Download size={13} />
+                          <span>Download</span>
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                  {files.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-center text-xs text-slate-400 italic">No files accessible in this course repository.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== ATTENDANCE TAB ===================== */}
+        {activeTab === 'attendance' && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" data-testid="course-attendance-panel">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Course Attendance Roster</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Class session records and participation status</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">{attendance.length} Record(s)</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-6">Student</th>
+                    <th className="py-3 px-6">Date</th>
+                    <th className="py-3 px-6">Status</th>
+                    <th className="py-3 px-6">Notes / Excuse</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {attendance.map((att) => (
+                    <tr key={att.id} className="hover:bg-slate-50/50" data-testid={`attendance-row-${att.id}`}>
+                      <td className="py-3 px-6 font-bold text-slate-900">
+                        {att.student_name}
+                      </td>
+                      <td className="py-3 px-6 text-xs text-slate-600">
+                        {att.session_date || 'Session'}
+                      </td>
+                      <td className="py-3 px-6">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          att.status === 'present' ? 'bg-emerald-100 text-emerald-800' :
+                          att.status === 'excused' ? 'bg-indigo-100 text-indigo-800' :
+                          att.status === 'late' ? 'bg-amber-100 text-amber-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {att.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6 text-xs text-slate-500">
+                        {att.excuse_reason || '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {attendance.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-xs text-slate-400 italic">No attendance records recorded for this course.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ===================== APPEALS TAB ===================== */}
+        {activeTab === 'appeals' && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm" data-testid="course-appeals-panel">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base">Grade Appeals Workflow</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Formal grade appeal submissions and moderation</p>
+              </div>
+              <span className="text-xs text-slate-500 font-semibold">{appeals.length} Appeal(s)</span>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {appeals.map((app) => (
+                <div key={app.id} className="p-6 hover:bg-slate-50/50 transition-colors" data-testid={`appeal-item-${app.id}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-slate-900 text-base">{app.student_name}</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                      app.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                      app.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-amber-100 text-amber-800'
+                    }`}>
+                      {app.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mb-2"><strong>Reason:</strong> {app.reason}</p>
+                  {app.decision_rationale && (
+                    <p className="text-xs text-slate-500 bg-slate-100 p-3 rounded-lg">
+                      <strong>Moderator Decision:</strong> {app.decision_rationale}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {appeals.length === 0 && (
+                <p className="p-8 text-center text-xs text-slate-400 italic">No grade appeals active in this course.</p>
+              )}
             </div>
           </div>
         )}

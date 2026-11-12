@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..database import get_db
-from ..models import User, Course, Assignment, Submission, PeerReview, GradeAppeal
+from ..models import User, Course, Assignment, Submission, PeerReview, GradeAppeal, GradeHistory, Enrollment
 from ..schemas import (
-    PeerReviewOut, PeerReviewSubmit, GradeAppealOut, GradeAppealCreate, GradeAppealResolve
+    PeerReviewOut, PeerReviewSubmit, PeerReviewAssign, GradeAppealOut, GradeAppealCreate, GradeAppealResolve
 )
 from ..auth import get_current_user
 from ..permissions import (
@@ -54,6 +54,82 @@ def serialize_grade_appeal(appeal: GradeAppeal) -> Dict[str, Any]:
 
 
 # ===================== PEER REVIEWS =====================
+
+@router.post("/assignments/{assignment_id}/peer-reviews/assign", response_model=PeerReviewOut, status_code=status.HTTP_201_CREATED)
+def assign_peer_review(
+    assignment_id: int,
+    payload: PeerReviewAssign,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Assign a peer review to a student. Course staff only."""
+    assignment = db.get(Assignment, assignment_id)
+    if not assignment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assignment not found.")
+
+    verify_course_staff(assignment.course_id, current_user, db)
+
+    submission = db.get(Submission, payload.submission_id)
+    if not submission or submission.assignment_id != assignment_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Submission does not belong to this assignment.")
+
+    # Self-review prevention
+    if submission.student_id == payload.reviewer_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Self-review is not permitted: reviewer cannot be the submission author.",
+        )
+
+    # Reviewer enrollment check
+    reviewer_enr = db.scalar(
+        select(Enrollment).where(
+            Enrollment.course_id == assignment.course_id,
+            Enrollment.user_id == payload.reviewer_id,
+            Enrollment.status == "active",
+        )
+    )
+    if not reviewer_enr:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reviewer is not actively enrolled in this course.",
+        )
+
+    # Duplicate check
+    existing = db.scalar(
+        select(PeerReview).where(
+            PeerReview.submission_id == payload.submission_id,
+            PeerReview.reviewer_id == payload.reviewer_id,
+        )
+    )
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Reviewer is already assigned to this submission.",
+        )
+
+    review = PeerReview(
+        submission_id=payload.submission_id,
+        reviewer_id=payload.reviewer_id,
+        is_anonymous=payload.is_anonymous,
+        deadline=payload.deadline,
+        status="assigned",
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ASSIGN_PEER_REVIEW",
+        resource_type="peer_review",
+        resource_id=str(review.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_201_CREATED,
+        detail=f"Staff {current_user.username} assigned user #{payload.reviewer_id} to review submission #{payload.submission_id}.",
+    )
+    return serialize_peer_review(review, redact_reviewer=False)
+
 
 @router.get("/peer-reviews/assigned", response_model=List[PeerReviewOut])
 def list_assigned_peer_reviews(
@@ -322,6 +398,27 @@ def resolve_appeal(
     appeal.status = resolution.status
     appeal.resolution_notes = resolution.resolution_notes
     appeal.reviewer_id = current_user.id
+
+    if resolution.status == "approved" and resolution.adjusted_grade is not None:
+        max_grade = appeal.submission.assignment.max_grade if appeal.submission.assignment else 100
+        if resolution.adjusted_grade < 0 or resolution.adjusted_grade > max_grade:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Adjusted grade must be between 0 and {max_grade}.",
+            )
+        prev_grade = appeal.submission.grade
+        appeal.submission.grade = resolution.adjusted_grade
+
+        history = GradeHistory(
+            submission_id=appeal.submission_id,
+            course_id=course_id,
+            student_id=appeal.student_id,
+            previous_grade=prev_grade,
+            new_grade=resolution.adjusted_grade,
+            changed_by_id=current_user.id,
+            reason=f"Grade appeal #{appeal.id} approved: {resolution.resolution_notes}",
+        )
+        db.add(history)
 
     db.commit()
     db.refresh(appeal)

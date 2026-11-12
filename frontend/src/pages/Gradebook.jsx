@@ -78,9 +78,9 @@ export default function Gradebook() {
     e.preventDefault();
     setEditError('');
 
-    const numericGrade = parseInt(editGrade, 10);
+    const numericGrade = parseFloat(editGrade);
     if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
-      setEditError('Grade must be an integer between 0 and 100.');
+      setEditError('Grade must be a number between 0 and 100.');
       return;
     }
 
@@ -191,7 +191,7 @@ export default function Gradebook() {
                           {item && item.score !== null ? (
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-emerald-700">{item.score}</span>
-                              {!isStudent && item.submission_id && (
+                              {!(gradebookData?.current_user_role ? gradebookData.current_user_role === 'student' : isStudent) && item.submission_id && (
                                 <button
                                   onClick={() => handleOpenEdit(st, item)}
                                   data-testid={`edit-grade-btn-${item.submission_id}`}

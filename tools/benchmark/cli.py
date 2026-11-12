@@ -8,9 +8,13 @@ Usage:
 import sys
 import argparse
 import json
+from pathlib import Path
 
 from .capture.package_builder import PackageBuilder
 from .validation.validator import BenchmarkValidator
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_BENCHMARK_DIR = str(REPO_ROOT / "research_snapshots_2000")
 
 
 def main():
@@ -19,15 +23,15 @@ def main():
 
     # Generate
     gen_parser = subparsers.add_parser("generate", help="Generate and package ~2,000 benchmark cases")
-    gen_parser.add_argument("--output", default="/home/regenesis/Desktop/guard-slm-lms/research_snapshots_2000", help="Output directory")
+    gen_parser.add_argument("--output", default=DEFAULT_BENCHMARK_DIR, help="Output directory")
 
     # Validate
     val_parser = subparsers.add_parser("validate", help="Run 20-point validation suite on benchmark")
-    val_parser.add_argument("--dir", default="/home/regenesis/Desktop/guard-slm-lms/research_snapshots_2000", help="Benchmark directory")
+    val_parser.add_argument("--dir", default=DEFAULT_BENCHMARK_DIR, help="Benchmark directory")
 
     # Stats
     stat_parser = subparsers.add_parser("stats", help="Show summary statistics of generated benchmark")
-    stat_parser.add_argument("--dir", default="/home/regenesis/Desktop/guard-slm-lms/research_snapshots_2000", help="Benchmark directory")
+    stat_parser.add_argument("--dir", default=DEFAULT_BENCHMARK_DIR, help="Benchmark directory")
 
     args = parser.parse_args()
 

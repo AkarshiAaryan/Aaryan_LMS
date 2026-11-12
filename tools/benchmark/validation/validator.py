@@ -6,18 +6,22 @@ import os
 import csv
 import json
 import zipfile
-from typing import Dict, List, Any, Tuple
+from pathlib import Path
+from typing import Dict, List, Any, Tuple, Optional
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_BASE_DIR = str(REPO_ROOT / "research_snapshots_2000")
 
 
 class BenchmarkValidator:
-    def __init__(self, base_dir: str = "/home/regenesis/Desktop/guard-slm-lms/research_snapshots_2000"):
-        self.base_dir = base_dir
-        self.pages_dir = os.path.join(base_dir, "raw_snapshots", "pages")
-        self.policies_dir = os.path.join(base_dir, "raw_snapshots", "policies")
-        self.slm_inputs_dir = os.path.join(base_dir, "slm_inputs")
-        self.eval_dir = os.path.join(base_dir, "evaluation_only")
-        self.reports_dir = os.path.join(base_dir, "reports")
-        self.manifest_file = os.path.join(base_dir, "manifest.csv")
+    def __init__(self, base_dir: Optional[str] = None):
+        self.base_dir = str(base_dir) if base_dir else DEFAULT_BASE_DIR
+        self.pages_dir = os.path.join(self.base_dir, "raw_snapshots", "pages")
+        self.policies_dir = os.path.join(self.base_dir, "raw_snapshots", "policies")
+        self.slm_inputs_dir = os.path.join(self.base_dir, "slm_inputs")
+        self.eval_dir = os.path.join(self.base_dir, "evaluation_only")
+        self.reports_dir = os.path.join(self.base_dir, "reports")
+        self.manifest_file = os.path.join(self.base_dir, "manifest.csv")
         self.ground_truth_file = os.path.join(self.eval_dir, "ground_truth.csv")
         
         self.results: List[Dict[str, Any]] = []
@@ -68,29 +72,28 @@ class BenchmarkValidator:
 
         # Check 6: STRICT DOUBLE-BLIND ISOLATION (No labels in slm_inputs)
         leaks = []
-        forbidden_tokens = ["expected_decision", "ALLOW", "BLOCK", "security_rationale", "ground_truth_rationale", "boundary_type"]
-        sample_files = os.listdir(self.slm_inputs_dir)[:200]  # Check sample of 200 files
-        for fname in sample_files:
+        all_slm_files = [f for f in os.listdir(self.slm_inputs_dir) if f.endswith(".md")] if os.path.exists(self.slm_inputs_dir) else []
+        for fname in all_slm_files:
             fpath = os.path.join(self.slm_inputs_dir, fname)
             with open(fpath, "r", encoding="utf-8") as f:
                 content = f.read()
                 # Check for explicit expected_decision key or isolated ALLOW/BLOCK label lines
                 if "expected_decision:" in content.lower() or "\nexpected: allow" in content.lower() or "\nexpected: block" in content.lower():
                     leaks.append(fname)
-        self._check(6, "Double-Blind Isolation (Zero Label Leakage)", len(leaks) == 0, f"Checked {len(sample_files)} SLM input files; leaks: {len(leaks)}")
+        self._check(6, "Double-Blind Isolation (Zero Label Leakage)", len(leaks) == 0, f"Checked 100% of SLM input files ({len(all_slm_files)} files); leaks: {len(leaks)}")
 
         # Check 7: Raw page accessibility snapshots exist
-        page_files = set(os.listdir(self.pages_dir))
+        page_files = set(os.listdir(self.pages_dir)) if os.path.exists(self.pages_dir) else set()
         missing_pages = [r["page_snapshot_file"] for r in manifest_rows if r["page_snapshot_file"] not in page_files]
         self._check(7, "Page Accessibility Snapshots Completeness", len(missing_pages) == 0, f"{len(page_files)} raw page snapshots verified")
 
         # Check 8: Raw policy accessibility snapshots exist
-        policy_files = set(os.listdir(self.policies_dir))
+        policy_files = set(os.listdir(self.policies_dir)) if os.path.exists(self.policies_dir) else set()
         missing_policies = [r["policy_snapshot_file"] for r in manifest_rows if r["policy_snapshot_file"] not in policy_files]
         self._check(8, "Policy Snapshots Completeness", len(missing_policies) == 0, f"{len(policy_files)} raw policy snapshots verified")
 
         # Check 9: SLM input files completeness
-        slm_files = set(os.listdir(self.slm_inputs_dir))
+        slm_files = set(os.listdir(self.slm_inputs_dir)) if os.path.exists(self.slm_inputs_dir) else set()
         missing_slm = [r["slm_input_file"] for r in manifest_rows if r["slm_input_file"] not in slm_files]
         self._check(9, "SLM Input Packages Completeness", len(missing_slm) == 0, f"{len(slm_files)} SLM input packages verified")
 
@@ -103,11 +106,38 @@ class BenchmarkValidator:
         self._check(10, "Decision Class Balance", balance_ok, f"ALLOW: {allow_count} ({ratio*100:.1f}%), BLOCK: {block_count} ({(1-ratio)*100:.1f}%)")
 
         # Check 11: 13 Scenario Families coverage
-        gt_fam_counts = {}
+        gt_fam_counts: Dict[str, int] = {}
+        target_families = {f"FAM{i:02d}" for i in range(1, 14)}
         for r in gt_rows:
-            # infer family from contrast_pair_id or rationale
-            pass
-        self._check(11, "13 Scenario Families Representation", True, "All 13 target scenario families represented across dataset")
+            fam = r.get("family_id")
+            if not fam:
+                tid_str = r.get("test_id", "")
+                if tid_str.startswith("TC"):
+                    try:
+                        tid_num = int(tid_str.replace("TC", ""))
+                        ranges = [
+                            (1, 154, "FAM01"), (155, 308, "FAM02"), (309, 462, "FAM03"),
+                            (463, 616, "FAM04"), (617, 770, "FAM05"), (771, 924, "FAM06"),
+                            (925, 1078, "FAM07"), (1079, 1232, "FAM08"), (1233, 1386, "FAM09"),
+                            (1387, 1540, "FAM10"), (1541, 1692, "FAM11"), (1693, 1846, "FAM12"),
+                            (1847, 2000, "FAM13"),
+                        ]
+                        for start, end, fid in ranges:
+                            if start <= tid_num <= end:
+                                fam = fid
+                                break
+                    except ValueError:
+                        pass
+            if fam:
+                gt_fam_counts[fam] = gt_fam_counts.get(fam, 0) + 1
+
+        missing_families = target_families - set(gt_fam_counts.keys())
+        all_represented = len(missing_families) == 0 and all(c >= 50 for c in gt_fam_counts.values())
+        detail = (
+            f"All 13 target families verified across {len(gt_rows)} cases (counts: {sorted(gt_fam_counts.items())})"
+            if all_represented else f"Missing or underrepresented families: {missing_families}"
+        )
+        self._check(11, "13 Scenario Families Representation", all_represented, detail)
 
         # Check 12: 5 Contrast Dimensions representation
         dimensions = set(r["contrast_dimension"] for r in gt_rows if r.get("contrast_dimension"))

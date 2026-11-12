@@ -5,7 +5,7 @@ Supports injectable simulation time via headers, context variables, and testing 
 from datetime import datetime, timezone
 from typing import Optional
 from contextvars import ContextVar
-from fastapi import Request
+from fastapi import Request, HTTPException, status
 
 _simulated_time_var: ContextVar[Optional[datetime]] = ContextVar("simulated_time", default=None)
 
@@ -54,8 +54,11 @@ class Clock:
             if sim_header:
                 try:
                     return parse_iso_datetime(sim_header)
-                except ValueError:
-                    pass
+                except ValueError as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid X-Simulation-Time header format: {e}",
+                    )
 
         # 3. UTC system time
         return datetime.now(timezone.utc)

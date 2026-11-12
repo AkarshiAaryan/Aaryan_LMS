@@ -1,12 +1,15 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
 from ..database import get_db
-from ..models import User, Course, Enrollment, Submission, QuizAttempt, ActivityLog
+from ..models import User, Course, Enrollment, Submission, QuizAttempt, ActivityLog, Department, CourseSection
 from ..schemas import (
-    UserOut, UserCreate, UserUpdate, EnrollmentOut, EnrollmentCreate, AdminStatsOut
+    UserOut, UserCreate, UserUpdate, CourseOut,
+    EnrollmentOut, EnrollmentCreate, EnrollmentUpdate,
+    DepartmentOut, DepartmentCreate, DepartmentUpdate,
+    AdminStatsOut
 )
 from ..auth import hash_password
 from ..permissions import require_admin, log_activity
@@ -150,6 +153,8 @@ def admin_list_enrollments(
                 "username": e.user.username if e.user else "",
                 "full_name": e.user.full_name if e.user else "",
                 "role": e.role,
+                "status": e.status,
+                "section_id": e.section_id,
                 "enrolled_at": e.enrolled_at,
             }
         )
@@ -183,10 +188,20 @@ def admin_create_enrollment(
             detail=f"User {user.username} is already enrolled in {course.code}.",
         )
 
+    if payload.section_id is not None:
+        section = db.get(CourseSection, payload.section_id)
+        if not section or section.course_id != payload.course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Section does not belong to this course or does not exist.",
+            )
+
     enrollment = Enrollment(
         course_id=payload.course_id,
         user_id=payload.user_id,
         role=payload.role,
+        status=payload.status,
+        section_id=payload.section_id,
     )
     db.add(enrollment)
     db.commit()
@@ -200,7 +215,7 @@ def admin_create_enrollment(
         resource_id=str(enrollment.id),
         outcome="ALLOW",
         http_status=201,
-        detail=f"Enrolled {user.username} into {course.code}.",
+        detail=f"Enrolled {user.username} into {course.code} (status: {enrollment.status}).",
     )
     return {
         "id": enrollment.id,
@@ -211,6 +226,63 @@ def admin_create_enrollment(
         "username": user.username,
         "full_name": user.full_name,
         "role": enrollment.role,
+        "status": enrollment.status,
+        "section_id": enrollment.section_id,
+        "enrolled_at": enrollment.enrolled_at,
+    }
+
+
+@router.put("/enrolments/{enrolment_id}", response_model=EnrollmentOut)
+def admin_update_enrollment(
+    enrolment_id: int,
+    payload: EnrollmentUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Modify enrolment role, status, or section reassignment (Administrator only)."""
+    enrollment = db.get(Enrollment, enrolment_id)
+    if not enrollment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Enrolment not found.")
+
+    if payload.role is not None:
+        enrollment.role = payload.role
+
+    if payload.status is not None:
+        enrollment.status = payload.status
+
+    if payload.section_id is not None:
+        section = db.get(CourseSection, payload.section_id)
+        if not section or section.course_id != enrollment.course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Section does not belong to this course or does not exist.",
+            )
+        enrollment.section_id = payload.section_id
+
+    db.commit()
+    db.refresh(enrollment)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ADMIN_UPDATE_ENROLMENT",
+        resource_type="enrolment",
+        resource_id=str(enrollment.id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Admin updated enrolment {enrollment.id} (role: {enrollment.role}, status: {enrollment.status}, section: {enrollment.section_id}).",
+    )
+    return {
+        "id": enrollment.id,
+        "course_id": enrollment.course_id,
+        "course_code": enrollment.course.code if enrollment.course else "",
+        "course_title": enrollment.course.title if enrollment.course else "",
+        "user_id": enrollment.user_id,
+        "username": enrollment.user.username if enrollment.user else "",
+        "full_name": enrollment.user.full_name if enrollment.user else "",
+        "role": enrollment.role,
+        "status": enrollment.status,
+        "section_id": enrollment.section_id,
         "enrolled_at": enrollment.enrolled_at,
     }
 
@@ -243,3 +315,214 @@ def admin_delete_enrollment(
         detail=f"Removed enrolment of {username} from {course_code}.",
     )
     return {"message": "Enrolment removed successfully."}
+
+
+@router.get("/departments", response_model=List[DepartmentOut])
+def admin_list_departments(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """List all academic departments (Administrator only)."""
+    departments = db.scalars(select(Department).order_by(Department.id)).all()
+    results = []
+    for d in departments:
+        results.append(
+            DepartmentOut(
+                id=d.id,
+                code=d.code,
+                name=d.name,
+                description=d.description,
+                head_id=d.head_id,
+                head_name=d.head.full_name if d.head else None,
+                created_at=d.created_at,
+            )
+        )
+    return results
+
+
+@router.post("/departments", response_model=DepartmentOut, status_code=status.HTTP_201_CREATED)
+def admin_create_department(
+    payload: DepartmentCreate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Create a new academic department (Administrator only)."""
+    existing = db.scalar(select(Department).where(Department.code == payload.code))
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Department with code {payload.code} already exists.",
+        )
+
+    if payload.head_id:
+        head_user = db.get(User, payload.head_id)
+        if not head_user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department head user not found.")
+
+    dept = Department(
+        code=payload.code,
+        name=payload.name,
+        description=payload.description,
+        head_id=payload.head_id,
+    )
+    db.add(dept)
+    db.commit()
+    db.refresh(dept)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ADMIN_CREATE_DEPARTMENT",
+        resource_type="department",
+        resource_id=str(dept.id),
+        outcome="ALLOW",
+        http_status=201,
+        detail=f"Created department {dept.code} - {dept.name}.",
+    )
+    return DepartmentOut(
+        id=dept.id,
+        code=dept.code,
+        name=dept.name,
+        description=dept.description,
+        head_id=dept.head_id,
+        head_name=dept.head.full_name if dept.head else None,
+        created_at=dept.created_at,
+    )
+
+
+@router.get("/departments/{department_id}", response_model=DepartmentOut)
+def admin_get_department(
+    department_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Get department details (Administrator only)."""
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found.")
+    return DepartmentOut(
+        id=dept.id,
+        code=dept.code,
+        name=dept.name,
+        description=dept.description,
+        head_id=dept.head_id,
+        head_name=dept.head.full_name if dept.head else None,
+        created_at=dept.created_at,
+    )
+
+
+@router.put("/departments/{department_id}", response_model=DepartmentOut)
+def admin_update_department(
+    department_id: int,
+    payload: DepartmentUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Update department details (Administrator only)."""
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found.")
+
+    if payload.code is not None:
+        dept.code = payload.code
+    if payload.name is not None:
+        dept.name = payload.name
+    if payload.description is not None:
+        dept.description = payload.description
+    if payload.head_id is not None:
+        head_user = db.get(User, payload.head_id)
+        if not head_user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department head user not found.")
+        dept.head_id = payload.head_id
+
+    db.commit()
+    db.refresh(dept)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ADMIN_UPDATE_DEPARTMENT",
+        resource_type="department",
+        resource_id=str(dept.id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Updated department {dept.code}.",
+    )
+    return DepartmentOut(
+        id=dept.id,
+        code=dept.code,
+        name=dept.name,
+        description=dept.description,
+        head_id=dept.head_id,
+        head_name=dept.head.full_name if dept.head else None,
+        created_at=dept.created_at,
+    )
+
+
+@router.delete("/departments/{department_id}")
+def admin_delete_department(
+    department_id: int,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a department (Administrator only)."""
+    dept = db.get(Department, department_id)
+    if not dept:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Department not found.")
+
+    db.delete(dept)
+    db.commit()
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ADMIN_DELETE_DEPARTMENT",
+        resource_type="department",
+        resource_id=str(department_id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Deleted department {dept.code}.",
+    )
+    return {"message": "Department deleted successfully."}
+
+
+@router.get("/courses", response_model=List[CourseOut])
+def admin_list_courses(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """List all courses including archived ones (Administrator only)."""
+    courses = db.scalars(select(Course).order_by(Course.id)).all()
+    results = []
+    for c in courses:
+        student_count = db.scalar(
+            select(func.count(Enrollment.id)).where(
+                Enrollment.course_id == c.id,
+                Enrollment.role == "student",
+                Enrollment.status == "active",
+            )
+        ) or 0
+        ta_enrollments = db.scalars(
+            select(Enrollment).where(
+                Enrollment.course_id == c.id,
+                Enrollment.role == "ta",
+                Enrollment.status == "active",
+            )
+        ).all()
+        ta_names = [e.user.full_name for e in ta_enrollments if e.user]
+        results.append(
+            CourseOut(
+                id=c.id,
+                code=c.code,
+                title=c.title,
+                description=c.description,
+                teacher_id=c.teacher_id,
+                teacher_name=c.teacher.full_name if c.teacher else "Unassigned",
+                student_count=student_count,
+                current_user_role="admin",
+                tas=ta_names,
+                is_archived=getattr(c, "is_archived", False),
+                created_at=c.created_at,
+            )
+        )
+    return results

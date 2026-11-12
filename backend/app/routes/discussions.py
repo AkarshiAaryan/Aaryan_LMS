@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -6,7 +6,8 @@ from sqlalchemy import select
 from ..database import get_db
 from ..models import User, Course, DiscussionThread, DiscussionPost, GroupMember, Group
 from ..schemas import (
-    DiscussionThreadOut, DiscussionThreadCreate, DiscussionPostOut, DiscussionPostCreate
+    DiscussionThreadOut, DiscussionThreadCreate, DiscussionThreadPin,
+    DiscussionPostOut, DiscussionPostCreate, DiscussionPostUpdate
 )
 from ..auth import get_current_user
 from ..permissions import (
@@ -26,6 +27,7 @@ def serialize_thread(t: DiscussionThread, include_posts: bool = False) -> Dict[s
             posts_data.append({
                 "id": p.id,
                 "thread_id": p.thread_id,
+                "parent_post_id": getattr(p, "parent_post_id", None),
                 "author_id": p.author_id,
                 "author_name": p.author.full_name if p.author else "Anonymous",
                 "author_role": p.author.role if p.author else "user",
@@ -40,6 +42,8 @@ def serialize_thread(t: DiscussionThread, include_posts: bool = False) -> Dict[s
         "author_id": t.author_id,
         "author_name": t.author.full_name if t.author else "Anonymous",
         "author_role": t.author.role if t.author else "user",
+        "recipient_id": getattr(t, "recipient_id", None),
+        "recipient_name": t.recipient.full_name if getattr(t, "recipient", None) else None,
         "title": t.title,
         "content": t.content,
         "is_pinned": t.is_pinned,
@@ -62,8 +66,8 @@ def verify_thread_access(thread: DiscussionThread, user: User, db: Session) -> N
         return
 
     # Student checks:
-    # 1. Private thread: only author and staff can view
-    if thread.is_private and thread.author_id != user.id:
+    # 1. Private thread: only author, recipient, and staff can view
+    if thread.is_private and thread.author_id != user.id and getattr(thread, "recipient_id", None) != user.id:
         log_activity(
             db=db,
             user=user,
@@ -116,10 +120,12 @@ def list_course_threads(
 
     stmt = select(DiscussionThread).where(DiscussionThread.course_id == course_id)
     if course_role == "student":
-        # Students see non-private threads, or private threads they authored
+        # Students see non-private threads, or private threads they authored or received
         user_groups = select(GroupMember.group_id).where(GroupMember.user_id == current_user.id)
         stmt = stmt.where(
-            (DiscussionThread.is_private == False) | (DiscussionThread.author_id == current_user.id)
+            (DiscussionThread.is_private == False)
+            | (DiscussionThread.author_id == current_user.id)
+            | (DiscussionThread.recipient_id == current_user.id)
         ).where(
             (DiscussionThread.group_id == None) | (DiscussionThread.group_id.in_(user_groups))
         )
@@ -163,6 +169,7 @@ def create_course_thread(
     thread = DiscussionThread(
         course_id=course_id,
         author_id=current_user.id,
+        recipient_id=payload.recipient_id,
         title=payload.title,
         content=payload.content,
         is_private=payload.is_private,
@@ -232,8 +239,17 @@ def reply_to_thread(
             detail="Access denied: this discussion thread is locked for replies.",
         )
 
+    if payload.parent_post_id:
+        parent_post = db.get(DiscussionPost, payload.parent_post_id)
+        if not parent_post or parent_post.thread_id != thread_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Parent post does not belong to this thread.",
+            )
+
     post = DiscussionPost(
         thread_id=thread_id,
+        parent_post_id=payload.parent_post_id,
         author_id=current_user.id,
         content=payload.content,
     )
@@ -244,6 +260,7 @@ def reply_to_thread(
     return {
         "id": post.id,
         "thread_id": post.thread_id,
+        "parent_post_id": post.parent_post_id,
         "author_id": post.author_id,
         "author_name": current_user.full_name,
         "author_role": current_user.role,
@@ -251,6 +268,69 @@ def reply_to_thread(
         "is_flagged": post.is_flagged,
         "created_at": post.created_at,
     }
+
+
+@router.put("/discussions/posts/{post_id}", response_model=DiscussionPostOut)
+def edit_discussion_post(
+    post_id: int,
+    payload: DiscussionPostUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Edit a discussion post (Author or course staff only)."""
+    post = db.get(DiscussionPost, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion post not found.")
+
+    verify_course_access(post.thread.course_id, current_user, db)
+    course_role = get_user_course_role(post.thread.course_id, current_user, db)
+
+    is_staff = course_role in ["admin", "professor", "ta"]
+    is_author = post.author_id == current_user.id
+
+    if not (is_staff or is_author):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: you cannot edit this post.")
+
+    post.content = payload.content
+    db.commit()
+    db.refresh(post)
+
+    return {
+        "id": post.id,
+        "thread_id": post.thread_id,
+        "parent_post_id": post.parent_post_id,
+        "author_id": post.author_id,
+        "author_name": post.author.full_name if post.author else "Anonymous",
+        "author_role": post.author.role if post.author else "user",
+        "content": post.content,
+        "is_flagged": post.is_flagged,
+        "created_at": post.created_at,
+    }
+
+
+@router.delete("/discussions/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_discussion_post(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a discussion post (Author or course staff only)."""
+    post = db.get(DiscussionPost, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion post not found.")
+
+    verify_course_access(post.thread.course_id, current_user, db)
+    course_role = get_user_course_role(post.thread.course_id, current_user, db)
+
+    is_staff = course_role in ["admin", "professor", "ta"]
+    is_author = post.author_id == current_user.id
+
+    if not (is_staff or is_author):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: you cannot delete this post.")
+
+    db.delete(post)
+    db.commit()
+    return None
 
 
 @router.post("/discussions/{thread_id}/lock", response_model=DiscussionThreadOut)
@@ -281,3 +361,89 @@ def lock_thread(
         detail=f"Staff {current_user.username} locked discussion thread #{thread.id}.",
     )
     return serialize_thread(thread, include_posts=True)
+
+
+@router.put("/discussions/{thread_id}/pin", response_model=DiscussionThreadOut)
+def pin_thread(
+    thread_id: int,
+    payload: DiscussionThreadPin,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Pin or unpin discussion thread (Course staff only)."""
+    thread = db.get(DiscussionThread, thread_id)
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion thread not found.")
+
+    verify_course_staff(thread.course_id, current_user, db)
+    thread.is_pinned = payload.is_pinned
+    db.commit()
+    db.refresh(thread)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="PIN_DISCUSSION_THREAD",
+        resource_type="discussion",
+        resource_id=str(thread.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"Staff {current_user.username} set is_pinned={payload.is_pinned} on thread #{thread.id}.",
+    )
+    return serialize_thread(thread, include_posts=True)
+
+
+@router.post("/discussions/posts/{post_id}/flag")
+def flag_post(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Flag a post for moderation (Any enrolled course participant)."""
+    post = db.get(DiscussionPost, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion post not found.")
+
+    verify_course_access(post.thread.course_id, current_user, db)
+    post.is_flagged = True
+    db.commit()
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="FLAG_DISCUSSION_POST",
+        resource_type="discussion",
+        resource_id=str(post.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"User {current_user.username} flagged discussion post #{post.id}.",
+    )
+    return {"message": f"Post #{post.id} flagged for staff review.", "is_flagged": True}
+
+
+@router.post("/discussions/posts/{post_id}/unflag")
+def unflag_post(
+    post_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Unflag a moderated post (Course staff only)."""
+    post = db.get(DiscussionPost, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Discussion post not found.")
+
+    verify_course_staff(post.thread.course_id, current_user, db)
+    post.is_flagged = False
+    db.commit()
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="UNFLAG_DISCUSSION_POST",
+        resource_type="discussion",
+        resource_id=str(post.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"Staff {current_user.username} unflagged discussion post #{post.id}.",
+    )
+    return {"message": f"Post #{post.id} unflagged.", "is_flagged": False}

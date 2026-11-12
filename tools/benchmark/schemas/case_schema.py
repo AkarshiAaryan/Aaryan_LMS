@@ -46,6 +46,8 @@ class BenchmarkCase:
     step_sequence: Optional[List[str]] = None
     is_adversarial: bool = False
     adversarial_technique: Optional[str] = None
+    provenance: str = "TEMPLATE_DERIVED"
+    source_template: Optional[str] = None
     
     def to_manifest_dict(self) -> Dict[str, Any]:
         """Public manifest metadata."""
@@ -62,7 +64,15 @@ class BenchmarkCase:
             "requested_action": self.requested_action,
             "target_resource": self.target_resource,
             "policy_title": self.policy_title,
-            "capture_status": "CAPTURED",
+            "family_id": self.family_id,
+            "category": self.category,
+            "contrast_pair_id": self.contrast_pair_id or "",
+            "contrast_role": self.contrast_role or "",
+            "contrast_dimension": self.contrast_dimension or "",
+            "operation": self.operation,
+            "capture_status": "TEMPLATE_DERIVED",
+            "provenance": getattr(self, "provenance", "TEMPLATE_DERIVED"),
+            "source_template": getattr(self, "source_template", "") or "",
         }
         
     def to_ground_truth_dict(self) -> Dict[str, Any]:

@@ -14,10 +14,17 @@ from .routes import (
 )
 
 
+from .migrate_db import run_migrations
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure all tables exist
+    # Ensure all tables exist and columns are synced
     Base.metadata.create_all(bind=engine)
+    try:
+        run_migrations()
+    except Exception as e:
+        print(f"Migration note: {e}")
 
     # Check if database needs seeding
     db = SessionLocal()
@@ -69,6 +76,7 @@ def health_check():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(courses.router)
+app.include_router(courses.announcements_router)
 app.include_router(assignments.router)
 app.include_router(submissions.router)
 app.include_router(quizzes.router)

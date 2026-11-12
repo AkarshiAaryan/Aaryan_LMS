@@ -58,6 +58,7 @@ class CourseOut(BaseModel):
     student_count: int = 0
     current_user_role: Optional[str] = None
     tas: Optional[List[str]] = []
+    is_archived: bool = False
     created_at: Optional[datetime] = None
 
 
@@ -73,6 +74,11 @@ class CourseUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     teacher_id: Optional[int] = None
+    is_archived: Optional[bool] = None
+
+
+class CourseArchive(BaseModel):
+    is_archived: bool = True
 
 
 class EnrollmentOut(BaseModel):
@@ -86,6 +92,8 @@ class EnrollmentOut(BaseModel):
     username: Optional[str] = None
     full_name: Optional[str] = None
     role: str
+    status: Optional[str] = "active"
+    section_id: Optional[int] = None
     enrolled_at: Optional[datetime] = None
 
 
@@ -93,6 +101,14 @@ class EnrollmentCreate(BaseModel):
     course_id: int
     user_id: int
     role: str = "student"
+    status: str = "active"
+    section_id: Optional[int] = None
+
+
+class EnrollmentUpdate(BaseModel):
+    role: Optional[str] = None
+    status: Optional[str] = Field(None, pattern="^(active|suspended|revoked)$")
+    section_id: Optional[int] = None
 
 
 # ===================== GROUP SCHEMAS =====================
@@ -135,9 +151,11 @@ class AssignmentOut(BaseModel):
     is_group: bool = False
     allow_late: bool = False
     is_published: bool = True
+    is_archived: bool = False
     created_at: Optional[datetime] = None
     submission_count: Optional[int] = 0
     my_submission: Optional[Any] = None
+    current_user_role: Optional[str] = None
 
 
 class AssignmentCreate(BaseModel):
@@ -206,8 +224,8 @@ class SubmissionOut(BaseModel):
     extension_granted: bool = False
     is_published: bool = True
     is_locked: bool = False
-    grade: Optional[int] = None
-    max_grade: Optional[int] = 100
+    grade: Optional[float] = None
+    max_grade: Optional[float] = 100
     feedback: Optional[str] = None
     graded_by_id: Optional[int] = None
     graded_by_name: Optional[str] = None
@@ -215,9 +233,10 @@ class SubmissionOut(BaseModel):
 
 
 class SubmissionGrade(BaseModel):
-    grade: int = Field(..., ge=0, le=100)
+    grade: float = Field(..., ge=0)
     feedback: Optional[str] = ""
     reason: Optional[str] = "Standard assessment grading"
+    is_published: bool = True
 
 
 # ===================== QUIZ SCHEMAS =====================
@@ -235,6 +254,25 @@ class QuizQuestionAdminOut(QuizQuestionOut):
     correct_answer: str
 
 
+class QuizQuestionCreate(BaseModel):
+    question_text: str = Field(..., min_length=1)
+    question_type: str = Field("multiple_choice", pattern="^(multiple_choice|true_false|short_answer)$")
+    options: Optional[List[str]] = None
+    correct_answer: str
+    points: int = 1
+
+
+class QuizCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=150)
+    description: str = ""
+    open_date: str
+    close_date: str
+    answer_release_date: Optional[str] = None
+    time_limit_minutes: int = 30
+    max_attempts: int = 1
+    is_published: bool = True
+
+
 class QuizOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -249,11 +287,13 @@ class QuizOut(BaseModel):
     time_limit_minutes: int
     max_attempts: int
     is_published: bool
+    is_archived: bool = False
     created_at: Optional[datetime] = None
     question_count: int = 0
     my_attempts_count: Optional[int] = 0
     attempts_remaining: Optional[int] = None
     questions: Optional[List[QuizQuestionOut]] = None
+    current_user_role: Optional[str] = None
 
 
 class QuizAttemptOut(BaseModel):
@@ -275,7 +315,8 @@ class QuizAttemptOut(BaseModel):
 
 class QuizAnswerSubmission(BaseModel):
     question_id: int
-    selected_option: str
+    selected_option: Optional[str] = None
+    selected_answer: Optional[str] = None
 
 
 class QuizSubmitRequest(BaseModel):
@@ -379,6 +420,11 @@ class AnnouncementCreate(BaseModel):
     content: str = Field(..., min_length=2)
 
 
+class AnnouncementUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=150)
+    content: Optional[str] = Field(None, min_length=2)
+
+
 # ===================== LOGS & ADMIN STATS =====================
 
 class ActivityLogOut(BaseModel):
@@ -429,6 +475,13 @@ class DepartmentCreate(BaseModel):
     head_id: Optional[int] = None
 
 
+class DepartmentUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    head_id: Optional[int] = None
+
+
 class CourseSectionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -436,6 +489,9 @@ class CourseSectionOut(BaseModel):
     course_id: int
     section_number: str
     title: str
+    room: Optional[str] = ""
+    meeting_times: Optional[str] = ""
+    capacity: Optional[int] = 30
     instructor_id: Optional[int] = None
     instructor_name: Optional[str] = None
     created_at: Optional[datetime] = None
@@ -444,6 +500,9 @@ class CourseSectionOut(BaseModel):
 class CourseSectionCreate(BaseModel):
     section_number: str = Field(..., min_length=2, max_length=20)
     title: str = ""
+    room: str = ""
+    meeting_times: str = ""
+    capacity: int = 30
     instructor_id: Optional[int] = None
 
 
@@ -454,6 +513,7 @@ class DiscussionPostOut(BaseModel):
 
     id: int
     thread_id: int
+    parent_post_id: Optional[int] = None
     author_id: Optional[int] = None
     author_name: Optional[str] = None
     author_role: Optional[str] = None
@@ -464,6 +524,15 @@ class DiscussionPostOut(BaseModel):
 
 class DiscussionPostCreate(BaseModel):
     content: str = Field(..., min_length=1)
+    parent_post_id: Optional[int] = None
+
+
+class DiscussionPostUpdate(BaseModel):
+    content: str = Field(..., min_length=1)
+
+
+class DiscussionThreadPin(BaseModel):
+    is_pinned: bool = True
 
 
 class DiscussionThreadOut(BaseModel):
@@ -474,6 +543,8 @@ class DiscussionThreadOut(BaseModel):
     author_id: Optional[int] = None
     author_name: Optional[str] = None
     author_role: Optional[str] = None
+    recipient_id: Optional[int] = None
+    recipient_name: Optional[str] = None
     title: str
     content: str
     is_pinned: bool
@@ -489,6 +560,7 @@ class DiscussionThreadCreate(BaseModel):
     title: str = Field(..., min_length=3, max_length=150)
     content: str = Field(..., min_length=3)
     is_private: bool = False
+    recipient_id: Optional[int] = None
     group_id: Optional[int] = None
 
 
@@ -554,6 +626,7 @@ class CourseFileOut(BaseModel):
     group_id: Optional[int] = None
     is_archived: bool
     expires_at: str
+    mime_type: Optional[str] = "application/octet-stream"
     created_at: Optional[datetime] = None
 
 
@@ -564,6 +637,10 @@ class CourseFileCreate(BaseModel):
     access_level: str = "public"
     group_id: Optional[int] = None
     expires_at: str = ""
+
+
+class CourseFileArchive(BaseModel):
+    is_archived: bool = True
 
 
 # ===================== PEER REVIEW & APPEAL SCHEMAS =====================
@@ -589,6 +666,13 @@ class PeerReviewSubmit(BaseModel):
     score: int = Field(..., ge=0, le=100)
 
 
+class PeerReviewAssign(BaseModel):
+    submission_id: int
+    reviewer_id: int
+    is_anonymous: bool = True
+    deadline: str = ""
+
+
 class GradeAppealOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -606,13 +690,14 @@ class GradeAppealOut(BaseModel):
 
 
 class GradeAppealCreate(BaseModel):
-    submission_id: int
-    reason: str = Field(..., min_length=10)
+    submission_id: Optional[int] = None
+    reason: str = Field(..., min_length=5)
 
 
 class GradeAppealResolve(BaseModel):
     status: str = Field(..., pattern="^(approved|rejected|under_review)$")
     resolution_notes: str = Field(..., min_length=5)
+    adjusted_grade: Optional[float] = None
 
 
 # ===================== ATTENDANCE SCHEMAS =====================
@@ -623,6 +708,7 @@ class AttendanceRecordOut(BaseModel):
     id: int
     course_id: int
     section_id: Optional[int] = None
+    session_id: Optional[int] = None
     student_id: int
     student_name: Optional[str] = None
     session_date: str
@@ -638,5 +724,24 @@ class AttendanceRecordCreate(BaseModel):
     student_id: int
     session_date: str
     section_id: Optional[int] = None
+    session_id: Optional[int] = None
     status: str = Field("present", pattern="^(present|absent|excused|late)$")
     notes: str = ""
+
+
+class AttendanceSessionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    course_id: int
+    section_id: Optional[int] = None
+    session_date: str
+    title: str
+    created_by_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+
+
+class AttendanceSessionCreate(BaseModel):
+    session_date: str
+    title: str = "Lecture"
+    section_id: Optional[int] = None

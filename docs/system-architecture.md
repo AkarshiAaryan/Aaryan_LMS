@@ -1,23 +1,21 @@
-# System Architecture: GuardSLM Research LMS
+# System Architecture: GuardSLM Academic LMS
 
 ## 1. Overview and Research Objective
 
 **GuardSLM** is a controlled, high-fidelity Learning Management System (LMS) testbed built to evaluate **Small Language Models (SLMs)** functioning as browser-agent authorization guards and runtime safety monitors.
 
 When an autonomous browser agent navigates a web application on behalf of a user, it possesses the capability to click buttons, fill forms, execute API requests, and view confidential data. A guard SLM must evaluate:
-1. Who is currently authenticated (Identity and Role).
-2. What operation is being attempted (View, Modify, Delete, Submit, Grade).
-3. Which resource is being targeted (Course, Assignment, Submission, Quiz, User Directory).
-4. Whether the logged-in user possesses valid course enrollment, instructor assignment, or resource ownership.
-5. Whether specific state policies apply (e.g., submission deadlines, quiz attempt quotas).
-
-GuardSLM simulates an authentic university academic portal inspired by Moodle and Canvas LMS, featuring full database persistence (PostgreSQL 16) and authoritative backend gatekeeping.
+1. Who is currently authenticated (Global Identity and Course-Effective Role).
+2. What operation is being attempted (View, Modify, Delete, Submit, Grade, Download, Archive).
+3. Which resource is being targeted (Course, Assignment, Submission, Quiz, Discussion, File, Attendance, Appeal).
+4. Whether the actor possesses active course enrollment, section membership, instructor assignment, or resource ownership.
+5. Whether specific state policies apply (e.g., submission deadlines, quiz attempt quotas, grade publication locks).
 
 ---
 
 ## 2. System Topology
 
-The system comprises two native local processes with zero-configuration embedded SQLite (or optional external PostgreSQL):
+The system comprises two native local processes with zero-configuration embedded SQLite (enforcing `PRAGMA foreign_keys=ON`) and fallback support for external PostgreSQL:
 
 ```mermaid
 graph TD
@@ -29,24 +27,31 @@ graph TD
     subgraph ServiceLayer ["Application Backend (:8000)"]
         GW["FastAPI Gateway & CORS"]
         AUTH["JWT & Salted Bcrypt Auth Module"]
+        CLOCK["Deterministic Simulation Time (clock.py)"]
         PERM["Centralized Permissions & Policy Engine"]
-        API["Domain Routers (Courses, Quizzes, Grades, Admin)"]
-        LOG["Audit Telemetry & Research Observability"]
+        STOR["Real Disk Storage Subsystem (storage.py)"]
+        MIGR["Schema Auto-Migration Sync (migrate_db.py)"]
+        API["Domain Routers (28 Entities)"]
+        LOG["Audit Telemetry & Research Observability (Isolated DB Session)"]
     end
 
     subgraph DataLayer ["Data Tier"]
-        DB[("Embedded SQLite / PostgreSQL Relational Engine")]
+        DB[("Embedded SQLite / PostgreSQL Engine (PRAGMA foreign_keys=ON)")]
         FILE[("Database File: backend/guardslm.db")]
+        DISK[("Disk Repository: backend/storage/files/")]
     end
 
     BA -->|Automated Browser Actions| FE
-    FE -->|HTTP Bearer REST Calls| GW
+    FE -->|HTTP Bearer REST Calls + X-Simulation-Time| GW
     GW --> AUTH
     AUTH --> PERM
     PERM --> API
+    API --> STOR
+    STOR --> DISK
     PERM -->|Log ALLOW / BLOCK| LOG
     API --> DB
     LOG --> DB
+    MIGR --> DB
     DB --- FILE
 ```
 
@@ -54,9 +59,10 @@ graph TD
 
 | Component | Technology | Port | Description |
 |---|---|---|---|
-| **Backend API** | Python 3.12 / FastAPI / Uvicorn | `8000` | FastAPI ASGI web server. Executes automated idempotent database seeding on startup and serves OpenAPI/Swagger documentation at `/docs`. |
-| **Frontend Portal** | Node 20 / Vite / React 18 | `5173` | React 18 single-page application served via Vite. Built with responsive academic styling and stable `data-testid` selectors. |
-| **Relational Database** | SQLite (default) / PostgreSQL | Embedded / `5432` | Embedded zero-config SQLite database (`backend/guardslm.db`) or optional PostgreSQL via `DATABASE_URL`. |
+| **Backend API** | Python 3.12 / FastAPI / Uvicorn | `8000` | FastAPI ASGI web server. Runs automatic schema migrations on startup, enforces SQLite foreign keys, and serves OpenAPI at `/docs`. |
+| **Frontend Portal** | Node 20 / Vite / React 18 | `5173` | React 18 single-page application served via Vite. Context-aware UI binding course-effective roles and stable `data-testid` selectors. |
+| **Relational Database** | SQLite (default) / PostgreSQL | Embedded / `5432` | Embedded SQLite database (`backend/guardslm.db`) with 28 tables and enforced foreign key constraints. |
+| **File Storage** | Local Disk / Path Sanitized | Filesystem | Path-traversal sanitized storage in `backend/storage/files/` with UUID keys and streaming byte downloads. |
 
 ---
 
@@ -64,57 +70,51 @@ graph TD
 
 ### 3.1 Backend Architecture (`backend/app/`)
 
-- **`database.py`**: Configures the SQLAlchemy 2.0 connection engine with connection pooling (`pool_pre_ping=True`) and dependency injection session scope (`get_db`).
-- **`models.py`**: Declarative database schema capturing Users, Courses, Enrollments, Assignments, Submissions, Quizzes, QuizQuestions, QuizAttempts, QuizAnswers, Resources, Announcements, and ActivityLogs.
-- **`schemas.py`**: Pydantic v2 schemas providing bidirectional payload validation, serialization, and OpenAPI documentation.
+- **`database.py`**: Configures the SQLAlchemy 2.0 connection engine with event listener executing `PRAGMA foreign_keys=ON` on every SQLite connection.
+- **`migrate_db.py`**: Automatic migration synchronizer comparing all 28 SQLAlchemy models against SQLite catalog and dynamically applying column and table updates without dropping data.
+- **`clock.py`**: Deterministic simulation time provider with strict ISO-8601 parsing raising HTTP 400 on malformed `X-Simulation-Time` headers.
+- **`storage.py`**: Sanitized local file repository handling Unix/Windows path traversal, MIME detection, and streaming `FileResponse`.
+- **`models.py`**: 28 Declarative database models capturing Users, Departments, Courses, CourseSections, Enrollments, Assignments, Submissions, Quizzes, QuizQuestions, QuizAttempts, QuizAnswers, Groups, GroupMembers, LearningModules, Lessons, StudentModuleProgress, DiscussionThreads, DiscussionPosts, DiscussionModerationLogs, CourseFiles, PeerReviews, GradeAppeals, GradeHistories, AttendanceSessions, AttendanceRecords, Announcements, Resources, and ActivityLogs.
+- **`schemas.py`**: Pydantic v2 schemas providing bidirectional payload validation, serialization, and OpenAPI contract specification.
 - **`auth.py`**: JWT access token generator and validator (HS256) and salted password hasher utilizing `bcrypt`.
-- **`permissions.py`**: Authoritative gatekeeping module. Implements granular dependency guards:
-  - `require_authenticated_user`
-  - `require_admin`
-  - `require_teacher_or_admin`
-  - `require_student`
-  - `verify_course_access(course_id, user, db)`
-  - `verify_course_teacher_or_admin(course_id, user, db)`
-  - `verify_course_student_enrollment(course_id, user, db)`
-  - `verify_submission_access(submission_id, user, db)`
-  - `verify_submission_grading_access(submission_id, user, db)`
-- **`seed.py`**: Deterministic database seeder. Populates all 6 academic personas, course fixtures, graded submissions, and attempt histories idempotently.
+- **`permissions.py`**: Centralized gatekeeping module enforcing course-effective roles, enrollment status (`active`, `suspended`, `revoked`), group ownership, and isolated audit logging.
+- **`seed.py`**: Deterministic database seeder populating 54 realistic academic personas, 4 departments, 4 courses, 8 sections, and realistic submission/attempt histories.
 - **`routes/`**: Domain-specific REST routers:
   - `auth.py`: Token login, profile inspection (`/auth/me`), and logout.
   - `users.py`: Personal profile and administrator user roster.
-  - `courses.py`: Course listing, detail view, overview metrics, and announcements.
-  - `assignments.py`: Course assignment specifications and instructor authoring.
-  - `submissions.py`: Student submission handler, resubmission updates, and faculty grading queue.
-  - `quizzes.py`: Quiz metadata, attempt initialization with quota enforcement, answer scoring, and attempt logs.
-  - `grades.py`: Database-filtered course gradebook and personal grade reports.
-  - `resources.py`: Syllabus, lecture slides, and reading pack repository.
-  - `admin.py`: Account creation, role modification, and course enrolment management.
-  - `logs.py`: Audit telemetry and authorization decision query endpoint.
+  - `courses.py`: Course listing, detail view, soft-archival (`PUT /courses/{id}/archive`), and announcements lifecycle.
+  - `assignments.py`: Course assignment specifications, authoring, and course-effective role serialization.
+  - `submissions.py`: Single canonical group submissions, unpublished grade redaction, and grading aliases (`PUT /grades/{id}`).
+  - `quizzes.py`: Quiz metadata, attempt quotas, answer-key masking, and denominator calculations over all questions.
+  - `grades.py`: Structured gradebook `{ course, assignments, quizzes, students, rows }` and student aggregated summary (`GET /grades/me`).
+  - `discussions.py`: Nested replies (`parent_post_id`), private thread recipient isolation, pinning, and moderation logs.
+  - `modules.py`: Learning module unlocks (`unlock_at`), prerequisite validation, and progression tracking.
+  - `files.py`: Multi-tier access level enforcement, multipart uploads, and streaming downloads.
+  - `peer_reviews.py`: Double-blind review assignments, reviewer constraints, and grade appeals regrading workflow.
+  - `attendance.py`: Attendance sessions, section locking, and absence excuse review.
+  - `admin.py`: User management, enrolment status lifecycle (`active`/`suspended`/`revoked`), and Department CRUD.
+  - `logs.py`: Audit telemetry querying.
 
 ### 3.2 Frontend Architecture (`frontend/src/`)
 
-- **`context/AuthContext.jsx`**: Global authentication provider managing client JWT tokens, persistent session retrieval, and role helper booleans (`isAdmin`, `isTeacher`, `isStudent`).
+- **`context/AuthContext.jsx`**: Global authentication provider managing JWT session storage and baseline role helpers.
 - **`api.js`**: Centralized Axios client with automatic Bearer token header injection and 401 interceptor redirection.
-- **`layouts/MainLayout.jsx`**: Academic portal shell featuring the top navigation bar, collapsible left sidebar, breadcrumbs, and role indicator.
+- **`layouts/MainLayout.jsx`**: Responsive portal shell with navbar, collapsible sidebar, breadcrumbs, and role badges.
 - **`pages/`**:
-  - `Login.jsx`: Academic login portal with one-click demo persona selector.
-  - `Dashboard.jsx`: Dedicated role-specific dashboard views tailored to Students, Teachers, and Administrators.
-  - `Courses.jsx` & `CourseDetail.jsx`: Course space with tabbed navigation (Overview, Assignments, Quizzes, Grades, Resources).
-  - `Assignments.jsx` & `AssignmentDetail.jsx`: Submission text editor, student feedback cards, and faculty evaluation modal.
-  - `Quizzes.jsx`, `QuizDetail.jsx`, `QuizAttempt.jsx`: Interactive MCQ assessment engine with real-time answer selection, submission calculation, and attempt limit notices.
-  - `Gradebook.jsx`: Course grade matrix strictly filtered by backend authorization.
-  - `Resources.jsx`: Course downloads and faculty upload interface.
-  - `UserDirectory.jsx`: Institution roster with search and role filters.
-  - `AdminDashboard.jsx`, `AdminUsers.jsx`, `AdminEnrollments.jsx`, `AdminLogs.jsx`: Administrative console.
+  - `Login.jsx`: Academic login portal with 1-click persona switcher across all 54 seeded accounts.
+  - `Dashboard.jsx`: Role-specific dashboard connecting students to `GET /grades/me` and staff to admin stats/logs.
+  - `CourseDetail.jsx`: Tabbed course space providing live interfaces for Overview, Modules, Assignments, Quizzes, Discussions, Course Files, Grades, Attendance, Appeals, Resources, and Policies.
+  - `AssignmentDetail.jsx`: Dynamic course-effective role view showing student submission editor or staff grading modal with decimal grade support.
+  - `QuizDetail.jsx` & `QuizAttempt.jsx`: Timed assessment view with course-effective attempt start buttons and direct attempt retrieval.
+  - `Gradebook.jsx`: Course grade matrix with student isolation, draft grade hiding, and modal regrading.
+  - `AdminDashboard.jsx`, `AdminUsers.jsx`, `AdminEnrollments.jsx`, `AdminLogs.jsx`: Institutional administration.
 
 ---
 
 ## 4. Security & Authorization Model
 
-GuardSLM enforces a **zero-trust frontend model**:
-1. **Authoritative Backend**: The frontend displays and hides UI controls to provide an intuitive user experience, but **every state-changing or sensitive read action is independently authorized on the backend**.
-2. **Immutable Role Claims**: Client requests cannot alter role privileges by tampering with localStorage, form bodies, or query parameters. The role is decoded strictly from the cryptographically signed JWT.
-3. **Database-Level Isolation**:
-   - Students querying `/courses/{id}/grades` receive **only their own grade records** from the database query.
-   - Teachers querying `/courses/{id}/grades` receive records **only for courses where `course.teacher_id == user.id`**.
-   - Direct URL manipulation (e.g., student navigating to an unenrolled course or teacher inspecting another course's submissions) triggers immediate HTTP 403 Forbidden responses.
+GuardSLM enforces a **zero-trust, multi-boundary access model**:
+1. **Course-Effective Role Scoping**: A persona's privileges are determined within each course independently. A Teaching Assistant in Course A who is enrolled as a Student in Course B receives strictly student privileges in Course B.
+2. **Enrollment Status Lifecycle**: Accounts with `suspended` enrollment are barred from taking quizzes, submitting work, editing posts, or viewing non-public resources. `revoked` accounts have zero course access.
+3. **FERPA Grade Privacy**: Unpublished grades, grading feedback, and instructor notes are completely hidden from students until published by the course professor.
+4. **Isolated Telemetry**: All authorization decisions (`ALLOW` vs `BLOCK`) are written to `activity_logs` in a dedicated transaction session, ensuring security auditing never disrupts business execution.
