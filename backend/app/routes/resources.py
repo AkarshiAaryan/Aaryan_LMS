@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -67,6 +67,67 @@ def get_resource_by_id(
 
     verify_resource_access(resource, current_user, db)
     return serialize_resource(resource)
+
+
+@router.get("/resources/{resource_id}/download")
+def download_resource(
+    resource_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Download resource content with full access enforcement."""
+    resource = db.get(Resource, resource_id)
+    if not resource:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Resource not found.")
+
+    verify_resource_access(resource, current_user, db)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="DOWNLOAD_RESOURCE",
+        resource_type="resource",
+        resource_id=str(resource.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"User {current_user.username} downloaded resource #{resource.id} ('{resource.title}').",
+    )
+
+    clean_name = resource.title.replace(" ", "_").replace("/", "_").replace(":", "_").lower()
+    ext = "pdf" if ".pdf" in (resource.url_or_content or "") else "txt"
+    filename = f"{clean_name}.{ext}"
+
+    content = f"""================================================================================
+{resource.title}
+Course: {resource.course.code if resource.course else 'GuardSLM'}
+Type: {resource.resource_type.upper()}
+Owner: {resource.owner.full_name if resource.owner else 'Instructor'}
+Staff Only: {resource.is_staff_only}
+================================================================================
+
+OVERVIEW & OBJECTIVES:
+{resource.description}
+
+SOURCE URL / IDENTIFIER:
+{resource.url_or_content}
+
+MODULE / LECTURE CONTENT SUMMARY:
+- Section 1: Conceptual Foundations & Core Methodologies
+- Section 2: Technical Specifications, Architecture & Workflow
+- Section 3: Laboratory Exercises, Review Questions & References
+
+---
+[GuardSLM Academic LMS - Generated Simulated Learning Resource]
+"""
+
+    return Response(
+        content=content.encode("utf-8"),
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Type": "text/plain; charset=utf-8",
+        },
+    )
 
 
 @router.post("/courses/{course_id}/resources", response_model=ResourceOut, status_code=status.HTTP_201_CREATED)

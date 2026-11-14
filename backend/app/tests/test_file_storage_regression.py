@@ -76,3 +76,41 @@ def test_multipart_file_upload_and_download_lifecycle(client, auth_headers, db_s
     # Download after delete returns 404
     res = client.get(f"/files/{file_id}/download", headers=s01_headers)
     assert res.status_code == status.HTTP_404_NOT_FOUND
+
+
+def test_resource_download_lifecycle(client, auth_headers, db_session):
+    prof = get_user(db_session, "prof01")
+    s01 = get_user(db_session, "student01")
+    c101 = get_course(db_session, "CSE301")
+
+    prof_headers = auth_headers(prof.username, prof.role, prof.id)
+    s01_headers = auth_headers(s01.username, s01.role, s01.id)
+
+    # 1. List resources for CSE301
+    res = client.get(f"/courses/{c101.id}/resources", headers=s01_headers)
+    assert res.status_code == status.HTTP_200_OK
+    student_resources = res.json()
+    assert len(student_resources) > 0
+    target_res = student_resources[0]
+
+    # 2. Student downloads public/student resource
+    download_res = client.get(f"/resources/{target_res['id']}/download", headers=s01_headers)
+    assert download_res.status_code == status.HTTP_200_OK
+    assert "attachment" in download_res.headers.get("Content-Disposition", "")
+    assert target_res["title"].encode() in download_res.content
+
+    # 3. Prof lists all resources including staff-only
+    res_prof = client.get(f"/courses/{c101.id}/resources", headers=prof_headers)
+    staff_only_resources = [r for r in res_prof.json() if r["is_staff_only"]]
+    assert len(staff_only_resources) > 0
+    staff_target = staff_only_resources[0]
+
+    # 4. Student blocked from downloading staff-only resource
+    block_res = client.get(f"/resources/{staff_target['id']}/download", headers=s01_headers)
+    assert block_res.status_code == status.HTTP_403_FORBIDDEN
+
+    # 5. Prof can download staff-only resource
+    allow_res = client.get(f"/resources/{staff_target['id']}/download", headers=prof_headers)
+    assert allow_res.status_code == status.HTTP_200_OK
+    assert staff_target["title"].encode() in allow_res.content
+

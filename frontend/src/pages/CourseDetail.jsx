@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import Breadcrumbs from '../components/Breadcrumbs';
 import StatusBadge from '../components/StatusBadge';
+import Modal from '../components/Modal';
 import {
   BookOpen,
   ClipboardList,
@@ -27,6 +28,7 @@ import {
   Scale,
   Download,
   File,
+  Eye,
 } from 'lucide-react';
 
 export default function CourseDetail() {
@@ -51,6 +53,26 @@ export default function CourseDetail() {
   const [appeals, setAppeals] = useState([]);
   const [publishing, setPublishing] = useState(false);
   const [publishMessage, setPublishMessage] = useState('');
+  const [viewingResource, setViewingResource] = useState(null);
+
+  const handleDownloadResource = async (resource) => {
+    try {
+      const res = await api.get(`/resources/${resource.id}/download`, { responseType: 'blob' });
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const cleanName = resource.title.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+      const ext = resource.url_or_content?.includes('.pdf') ? 'pdf' : 'txt';
+      link.setAttribute('download', `${cleanName}.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download error:', err);
+      alert(err.response?.data?.detail || 'Failed to download resource.');
+    }
+  };
 
   const fetchCourseData = async () => {
     try {
@@ -522,15 +544,25 @@ export default function CourseDetail() {
                     <p className="text-xs text-slate-600 mb-1">{r.description}</p>
                     <span className="text-[11px] text-slate-400">Added by {r.owner_name}</span>
                   </div>
-                  <a
-                    href={r.url_or_content}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                  >
-                    <span>Access Resource</span>
-                    <ArrowRight size={13} />
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setViewingResource(r)}
+                      className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                    >
+                      <Eye size={13} />
+                      <span>View</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadResource(r)}
+                      data-testid={`download-resource-btn-${r.id}`}
+                      className="px-3.5 py-1.5 bg-navy-800 hover:bg-navy-900 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors shadow-sm"
+                    >
+                      <Download size={13} />
+                      <span>Download</span>
+                    </button>
+                  </div>
                 </div>
               ))}
               {resources.length === 0 && (
@@ -829,6 +861,84 @@ export default function CourseDetail() {
           </div>
         )}
       </div>
+
+      {/* Resource Document Viewer Modal */}
+      <Modal
+        isOpen={Boolean(viewingResource)}
+        onClose={() => setViewingResource(null)}
+        title={viewingResource?.title || 'Resource Document Viewer'}
+        maxWidth="max-w-2xl"
+      >
+        {viewingResource && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-xs font-extrabold bg-navy-100 text-navy-800">
+                {course?.code || viewingResource.course_code}
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">
+                {viewingResource.resource_type}
+              </span>
+              {viewingResource.is_staff_only && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800 border border-red-200 flex items-center gap-1">
+                  <Lock size={10} /> Staff Only
+                </span>
+              )}
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Description</p>
+              <p className="text-sm text-slate-800 leading-relaxed">{viewingResource.description}</p>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1">
+              <p className="font-semibold flex items-center gap-1">
+                <span>Simulated Academic Benchmark Resource</span>
+              </p>
+              <p className="text-amber-700 leading-relaxed text-[11px]">
+                In the GuardSLM research environment, external documents are indexed with synthetic domain URIs (e.g., <code className="bg-amber-100 px-1 py-0.5 rounded font-mono text-[11px]">{viewingResource.url_or_content}</code>). Click <strong>Download Document</strong> below to retrieve the complete simulated file payload.
+              </p>
+            </div>
+
+            <div className="bg-slate-900 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-x-auto max-h-56 space-y-2 border border-slate-800">
+              <div className="text-emerald-400 font-bold border-b border-slate-700 pb-2">
+                === {viewingResource.title} ===
+              </div>
+              <p className="text-slate-300"><span className="text-slate-500">Course:</span> {course?.code || viewingResource.course_code}</p>
+              <p className="text-slate-300"><span className="text-slate-500">Instructor:</span> {viewingResource.owner_name}</p>
+              <p className="text-slate-300"><span className="text-slate-500">Format:</span> {viewingResource.resource_type.toUpperCase()}</p>
+              <div className="pt-2 text-slate-400 text-[11px] border-t border-slate-800">
+                [DOCUMENT STRUCTURE & NOTES]<br />
+                • Section 1: Overview, Learning Outcomes & Core Terminology<br />
+                • Section 2: Methodological Foundations & Structural Diagrams<br />
+                • Section 3: Recommended Readings, Reference Tables & Sample Problems
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-xs text-slate-400 font-mono truncate max-w-xs" title={viewingResource.url_or_content}>
+                {viewingResource.url_or_content}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadResource(viewingResource)}
+                  className="px-4 py-2 bg-navy-800 hover:bg-navy-900 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Download size={14} />
+                  <span>Download Document</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingResource(null)}
+                  className="px-4 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
