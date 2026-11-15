@@ -14,6 +14,7 @@ import {
   Settings,
   History,
   Layers,
+  Bot,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -61,6 +62,10 @@ export default function Sidebar() {
             <NavLink to="/resources" className={navClass} data-testid="nav-resources">
               <FolderOpen size={18} />
               <span>Resources</span>
+            </NavLink>
+            <NavLink to="/research/audit" className={navClass} data-testid="nav-research-audit">
+              <Bot size={18} />
+              <span>AI Research Console</span>
             </NavLink>
             {isAdmin && (
               <NavLink to="/directory" className={navClass} data-testid="nav-directory">

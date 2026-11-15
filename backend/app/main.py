@@ -10,7 +10,7 @@ from .models import User
 from .seed import seed_database
 from .routes import (
     auth, users, courses, assignments, submissions, quizzes, grades, resources, admin, logs,
-    discussions, modules, files, peer_reviews, attendance
+    discussions, modules, files, peer_reviews, attendance, ai_assistant
 )
 
 
@@ -89,3 +89,4 @@ app.include_router(modules.router)
 app.include_router(files.router)
 app.include_router(peer_reviews.router)
 app.include_router(attendance.router)
+app.include_router(ai_assistant.router, prefix="/api/ai")

@@ -170,6 +170,54 @@ You never need to remember complex credentials. The sign-in page includes a **1-
 
 ---
 
+---
+
+## 🤖 Simulated Educational AI Assistant & Policy Guard
+
+A central highlight of the platform is the **Embedded Educational AI Assistant** and **Authoritative Policy Guard** testbed. Rather than trusting opaque external AI APIs, this system runs a 100% deterministic, hybrid safety guard that intercepts and evaluates every prompt before generating academic guidance.
+
+### 1. In-App Floating AI Assistant Widget
+- Accessible from the bottom-right corner across **all pages** (Course View, Assignments, Quizzes, Gradebook, etc.).
+- Automatically detects the user's active page, course ID, assessment status (`active`, `closed`, `upcoming`), and deadline context.
+- Provides progressive pedagogical hints, concept walkthroughs, and debugging advice without giving away full homework solutions or exam answers.
+
+### 2. Authoritative Policy Guard Decisions
+Every single interaction is categorized into one of four deterministic outcomes:
+| Decision | Meaning | System Behavior |
+| :---: | :--- | :--- |
+| **`ALLOW`** | Permitted Academic Request | Returns rich conceptual explanations, practice problems, or instructional rubrics. |
+| **`LIMIT`** | Bounded Assistance | Restricts assistance to conceptual hints and pseudocode structures during active assessment windows. |
+| **`BLOCK`** | Prohibited Action | Refuses the request citing the specific policy, logs violation evidence, and suggests a permitted alternative. |
+| **`ESCALATE`** | Critical Safety Threshold | Immediately freezes request and files an administrative compliance escalation ticket. |
+
+### 3. The 12 Institutional Violation Categories
+1. `EXCESSIVE_ASSISTANCE`: Over-reliance on AI replacing core learning objectives.
+2. `DIRECT_SOLUTION_SEEKING`: Demanding copy-pasteable homework or project solutions.
+3. `ASSESSMENT_BYPASS`: Attempting to circumvent quiz, exam, or deadline restrictions.
+4. `CONTEXTUAL_POLICY_VIOLATION`: Actions forbidden in the current page or assessment state.
+5. `ROLE_IMPERSONATION`: Claiming to be an instructor or dean to extract restricted answers.
+6. `POLICY_EVASION`: Rephrasing or prompt-injecting to bypass previous refusals.
+7. `INCREMENTAL_EXTRACTION`: Slicing solutions into smaller pieces across multiple turns.
+8. `UNAUTHORISED_GRADING`: Delegating authoritative student marks or grade calculations to AI.
+9. `STUDENT_PRIVACY_VIOLATION`: Viewing or exporting peer student submissions or private logs (FERPA).
+10. `UNAUTHORISED_DATA_ACCESS`: Accessing course materials where the user is not actively enrolled.
+11. `UNAUTHORISED_ADMIN_MONITORING`: Administrators snooping on student private chats without an audit warrant.
+12. `REPEATED_BOUNDARY_TESTING`: Repeatedly testing safety boundaries after receiving refusals.
+
+### 4. Multi-Turn Conversation Auditor (`/research/audit`)
+Individual guard decisions are not enough—adversaries often slice prompts across turns. The **Conversation Auditor** analyzes entire longitudinal interaction histories to assign multi-turn safety labels:
+- **`HARMLESS`** (Action: `NONE`): Legitimate study sessions (including 5–10+ questions).
+- **`SUSPICIOUS`** (Action: `REVIEW`): Isolated policy refusals or prompt rephrasing after a block.
+- **`POLICY_VIOLATING`** (Action: `ESCALATE`): Incremental solution extraction, repeated boundary testing, or role spoofing.
+
+### 5. Research & Compliance Console & Scenario Runner
+Visit **`/research/audit`** (linked in the left navigation sidebar) to:
+- Browse interactive timelines of all student and staff AI sessions.
+- Run the **51 standard scenario benchmark** (ST01–ST12, TA01–TA10, PR01–PR10, AD01–AD07, AU01–AU12) with 1-click execution.
+- Export complete conversation telemetry to **JSON** or **CSV** for research papers and benchmarks.
+
+---
+
 ## 🔬 AI Safety & Benchmark Research (GuardSLM V2)
 
 Beyond being a university LMS, this repository serves as a world-class evaluation benchmark for **Small Language Models (SLMs)** functioning as **AI Authorization Guards**:
@@ -193,18 +241,19 @@ python3 -m tools.benchmark.cli validate
 
 The entire backend and frontend are protected by automated tests:
 
-### Run Automated Backend Tests (79 Tests)
+### Run Automated Backend Tests (94 Tests)
 ```bash
 python3 -m pytest backend/app/tests -v
 ```
-*(Tests pass 100% in ~15-20 seconds across authentication, RBAC scenarios, file storage, quiz denominator, enrollment statuses, and new modules).*
+*(Tests pass 100% in ~20 seconds across authentication, RBAC scenarios, file storage, quiz integrity, AI Policy Guard, Multi-Turn Auditor, and API endpoints).*
 
 ### Run Frontend Production Build
 ```bash
 cd frontend
 npm run build
 ```
-*(Builds clean Vite production bundle in ~4.8s with 0 errors).*
+*(Builds clean Vite production bundle in ~5.1s with 0 errors).*
+
 
 ---
 

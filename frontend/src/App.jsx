@@ -18,6 +18,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
 import AdminEnrollments from './pages/AdminEnrollments';
 import AdminLogs from './pages/AdminLogs';
+import ResearchAudit from './pages/ResearchAudit';
 import Forbidden from './pages/Forbidden';
 import NotFound from './pages/NotFound';
 
@@ -74,6 +75,7 @@ export default function App() {
         <Route path="attempts/:attemptId" element={<QuizAttempt />} />
         <Route path="grades" element={<Gradebook />} />
         <Route path="resources" element={<Resources />} />
+        <Route path="research/audit" element={<ResearchAudit />} />
 
         {/* Admin Permitted Directory */}
         <Route

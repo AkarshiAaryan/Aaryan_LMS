@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -745,3 +745,122 @@ class AttendanceSessionCreate(BaseModel):
     session_date: str
     title: str = "Lecture"
     section_id: Optional[int] = None
+
+
+# ===================== AI ASSISTANT SCHEMAS =====================
+
+class AIInteractionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    interaction_id: str
+    conversation_id: int
+    sequence_number: int
+    user_request: str
+    browser_context_json: Optional[str] = None
+    applicable_policy_ids_json: Optional[str] = None
+    guard_decision: str
+    detected_intent: Optional[str] = None
+    requested_assistance_type: Optional[str] = None
+    permitted_assistance_type: Optional[str] = None
+    violation_categories_json: Optional[str] = None
+    guard_explanation: Optional[str] = None
+    evidence_json: Optional[str] = None
+    alternative_assistance: Optional[str] = None
+    agent_response: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class AIConversationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    conversation_id: str
+    user_id: int
+    effective_role: str
+    course_id: Optional[int] = None
+    title: str
+    status: str
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    interaction_count: int = 0
+    latest_guard_decision: Optional[str] = None
+    interactions: Optional[List[AIInteractionOut]] = None
+
+
+class AIConversationCreate(BaseModel):
+    title: Optional[str] = "Academic Study Session"
+    course_id: Optional[int] = None
+
+
+class AIMessageRequest(BaseModel):
+    user_request: str = Field(..., min_length=1)
+    page_context: Optional[Dict[str, Any]] = None
+    browser_snapshot: Optional[str] = None
+
+
+class AIMessageResponse(BaseModel):
+    interaction_id: str
+    guard_decision: str
+    detected_intent: str
+    permitted_assistance_type: str
+    violation_categories: List[str]
+    guard_explanation: str
+    evidence: List[str]
+    alternative_assistance: str
+    agent_response: str
+
+
+class AIAuditReportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    conversation_id: int
+    audit_label: str
+    detected_patterns_json: Optional[str] = None
+    violation_categories_json: Optional[str] = None
+    relevant_interaction_ids_json: Optional[str] = None
+    explanation: Optional[str] = None
+    supporting_evidence_json: Optional[str] = None
+    recommended_action: str
+    audited_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class AIPolicyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    policy_id: str
+    role: str
+    scope: str
+    course_id: Optional[int] = None
+    title: str
+    description: str
+    rules_json: Optional[str] = None
+    version: int
+    active: bool
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class AIPolicyImportRequest(BaseModel):
+    policies: List[Dict[str, Any]]
+
+
+class AIScenarioRunRequest(BaseModel):
+    scenario_id: str
+
+
+class AIScenarioRunOut(BaseModel):
+    scenario_id: str
+    title: str
+    type: str
+    role: str
+    passed: bool
+    actual_decision: Optional[str] = None
+    expected_decision: Optional[str] = None
+    actual_audit_label: Optional[str] = None
+    expected_audit_label: Optional[str] = None
+    result: Dict[str, Any]
+

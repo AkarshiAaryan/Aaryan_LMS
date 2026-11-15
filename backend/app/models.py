@@ -540,3 +540,103 @@ class AttendanceRecord(Base):
     session = relationship("AttendanceSession", back_populates="records")
     student = relationship("User", foreign_keys=[student_id])
     recorded_by = relationship("User", foreign_keys=[recorded_by_id])
+
+
+# =========================================================================
+# AI ASSISTANT, POLICY GUARD & CONVERSATION AUDITOR MODELS
+# =========================================================================
+
+class AIConversation(Base):
+    __tablename__ = "ai_conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(String(64), unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    effective_role = Column(String(30), nullable=False)  # 'student', 'ta', 'professor', 'admin'
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="SET NULL"), nullable=True)
+    title = Column(String(200), default="New Educational Consultation", nullable=False)
+    status = Column(String(30), default="active", nullable=False)  # 'active', 'archived', 'flagged'
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    course = relationship("Course", foreign_keys=[course_id])
+    interactions = relationship(
+        "AIInteraction",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="AIInteraction.sequence_number"
+    )
+    audit_reports = relationship(
+        "AIAuditReport",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="desc(AIAuditReport.created_at)"
+    )
+
+
+class AIInteraction(Base):
+    __tablename__ = "ai_interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    interaction_id = Column(String(64), unique=True, nullable=False, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id", ondelete="CASCADE"), nullable=False)
+    sequence_number = Column(Integer, nullable=False)
+    user_request = Column(Text, nullable=False)
+    browser_context_json = Column(Text, default="{}", nullable=False)
+    browser_snapshot_ref = Column(String(255), nullable=True)
+    applicable_policy_ids_json = Column(Text, default="[]", nullable=False)
+    guard_decision = Column(String(20), nullable=False)  # 'ALLOW', 'LIMIT', 'BLOCK', 'ESCALATE'
+    detected_intent = Column(String(100), default="", nullable=False)
+    requested_assistance_type = Column(String(100), default="", nullable=False)
+    permitted_assistance_type = Column(String(100), default="", nullable=False)
+    violation_categories_json = Column(Text, default="[]", nullable=False)
+    guard_explanation = Column(Text, default="", nullable=False)
+    evidence_json = Column(Text, default="[]", nullable=False)
+    alternative_assistance = Column(Text, default="", nullable=False)
+    agent_response = Column(Text, default="", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    conversation = relationship("AIConversation", back_populates="interactions")
+
+
+class AIAuditReport(Base):
+    __tablename__ = "ai_audit_reports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("ai_conversations.id", ondelete="CASCADE"), nullable=False)
+    audit_label = Column(String(30), nullable=False)  # 'HARMLESS', 'SUSPICIOUS', 'POLICY_VIOLATING'
+    detected_patterns_json = Column(Text, default="[]", nullable=False)
+    violation_categories_json = Column(Text, default="[]", nullable=False)
+    relevant_interaction_ids_json = Column(Text, default="[]", nullable=False)
+    explanation = Column(Text, default="", nullable=False)
+    supporting_evidence_json = Column(Text, default="[]", nullable=False)
+    recommended_action = Column(String(30), default="NONE", nullable=False)  # 'NONE', 'REVIEW', 'ESCALATE'
+    audited_by = Column(String(100), default="deterministic-session-auditor", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    conversation = relationship("AIConversation", back_populates="audit_reports")
+
+
+class AIPolicyRecord(Base):
+    __tablename__ = "ai_policy_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(String(64), unique=True, nullable=False, index=True)
+    role = Column(String(30), default="all", nullable=False)  # 'student', 'ta', 'professor', 'admin', 'all'
+    scope = Column(String(30), default="institutional", nullable=False)  # 'institutional', 'course', 'assignment'
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=True)
+    title = Column(String(200), nullable=False)
+    description = Column(Text, default="", nullable=False)
+    rules_json = Column(Text, default="{}", nullable=False)
+    version = Column(Integer, default=1, nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now)
+
+    # Relationships
+    course = relationship("Course")
+

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
+import AIAssistantWidget from '../components/AIAssistantWidget';
 
 export default function MainLayout() {
   return (
@@ -15,6 +16,8 @@ export default function MainLayout() {
           </div>
         </main>
       </div>
+      <AIAssistantWidget />
     </div>
   );
 }
+

@@ -1,0 +1,130 @@
+[
+  {
+    "policy_id": "POLICY_STUDENT_001",
+    "role": "student",
+    "scope": "institutional",
+    "course_id": null,
+    "title": "Institutional Student AI Assistance Policy",
+    "description": "Governs permitted, restricted, and prohibited AI interactions for student accounts across academic learning and assessment contexts.",
+    "version": 1,
+    "active": true,
+    "rules": {
+      "permitted_assistance": [
+        "concept_explanation",
+        "error_explanation",
+        "debugging_guidance",
+        "conceptual_hints",
+        "practice_questions",
+        "post_assessment_review"
+      ],
+      "restricted_assistance": [
+        "code_generation_active_assignment",
+        "pseudocode_active_assignment",
+        "active_assessment_hint_only",
+        "unreleased_solution_explanation"
+      ],
+      "prohibited_assistance": [
+        "complete_active_solution",
+        "active_quiz_answers",
+        "unreleased_answer_key",
+        "peer_submissions_access",
+        "role_impersonation",
+        "policy_evasion"
+      ]
+    }
+  },
+  {
+    "policy_id": "POLICY_TA_001",
+    "role": "ta",
+    "scope": "institutional",
+    "course_id": null,
+    "title": "Teaching Assistant AI Assistance & Grading Policy",
+    "description": "Governs pedagogical material generation, rubric creation, and strict prohibitions on automated grading and ranking by AI.",
+    "version": 1,
+    "active": true,
+    "rules": {
+      "permitted_assistance": [
+        "generate_hints",
+        "generate_practice_questions",
+        "explain_reference_solutions",
+        "identify_common_mistakes",
+        "prepare_tutorial_material",
+        "feedback_templates_anonymized"
+      ],
+      "restricted_assistance": [
+        "review_student_submissions_scoped",
+        "class_performance_analytics_scoped",
+        "draft_rubric_generation"
+      ],
+      "prohibited_assistance": [
+        "automated_submission_grading",
+        "student_performance_ranking",
+        "ai_generation_detection_accusation",
+        "uploading_identifiable_student_records",
+        "complete_solutions_when_hints_only",
+        "autonomous_academic_decisions"
+      ]
+    }
+  },
+  {
+    "policy_id": "POLICY_PROF_001",
+    "role": "professor",
+    "scope": "institutional",
+    "course_id": null,
+    "title": "Faculty & Course Director AI Assistance Policy",
+    "description": "Governs assessment authoring, rubric generation, analytics, and human-in-the-loop requirements for grading and misconduct evaluation.",
+    "version": 1,
+    "active": true,
+    "rules": {
+      "permitted_assistance": [
+        "generate_assignments",
+        "generate_quizzes",
+        "generate_reference_solutions",
+        "generate_marking_rubrics",
+        "anonymized_class_analytics",
+        "draft_feedback_templates"
+      ],
+      "restricted_assistance": [
+        "identifiable_submission_analysis_approved_workflow",
+        "preliminary_score_suggestions_non_binding",
+        "unreleased_assessment_solutions_confidential"
+      ],
+      "prohibited_assistance": [
+        "delegating_final_grading_to_ai",
+        "style_based_cheating_accusation",
+        "sharing_identifiable_student_data_external",
+        "cross_course_unauthorized_access",
+        "unreviewed_ai_grade_publishing"
+      ]
+    }
+  },
+  {
+    "policy_id": "POLICY_ADMIN_001",
+    "role": "admin",
+    "scope": "institutional",
+    "course_id": null,
+    "title": "Institutional Administrator AI Governance Policy",
+    "description": "Governs administrative reporting, system monitoring, and privacy protections against unauthorized browsing of private student/educational interactions.",
+    "version": 1,
+    "active": true,
+    "rules": {
+      "permitted_assistance": [
+        "aggregate_usage_reports",
+        "anonymized_usage_statistics",
+        "platform_technical_diagnostics",
+        "administrative_documentation",
+        "authorized_audit_summaries"
+      ],
+      "restricted_assistance": [
+        "investigate_incident_documented_purpose",
+        "authorized_conversation_audit_access"
+      ],
+      "prohibited_assistance": [
+        "browsing_private_conversations_unauthorized",
+        "unauthorized_student_grade_extraction",
+        "autonomous_ai_disciplinary_actions",
+        "exporting_identifiable_conversations_unauthorized"
+      ]
+    }
+  }
+]
