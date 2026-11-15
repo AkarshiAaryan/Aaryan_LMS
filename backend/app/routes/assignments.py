@@ -76,10 +76,12 @@ def serialize_assignment(
         "created_at": assignment.created_at,
         "submission_count": submission_count,
         "my_submission": my_submission,
+        "current_user_role": role,
     }
 
 
 @router.get("/courses/{course_id}/assignments", response_model=List[AssignmentOut])
+@router.get("/assignments/course/{course_id}", response_model=List[AssignmentOut])
 def list_course_assignments(
     course_id: int,
     current_user: User = Depends(get_current_user),
@@ -133,6 +135,7 @@ def get_assignment_by_id(
 
 
 @router.post("/courses/{course_id}/assignments", response_model=AssignmentOut, status_code=status.HTTP_201_CREATED)
+@router.post("/assignments/course/{course_id}", response_model=AssignmentOut, status_code=status.HTTP_201_CREATED)
 def create_assignment(
     course_id: int,
     payload: AssignmentCreate,

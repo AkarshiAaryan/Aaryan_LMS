@@ -113,7 +113,7 @@ export default function QuizDetail() {
           </div>
 
           {/* Start Quiz Action (Student Only) */}
-          {isStudent && (
+          {(quiz.current_user_role ? quiz.current_user_role === 'student' : isStudent) && (
             <div className="text-right shrink-0">
               <button
                 onClick={handleStartAttempt}
@@ -162,7 +162,7 @@ export default function QuizDetail() {
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm" data-testid="quiz-attempts-container">
         <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 text-base">
-            {isStudent ? 'Your Previous Attempts' : 'Student Quiz Attempt Records'}
+            {(quiz.current_user_role ? quiz.current_user_role === 'student' : isStudent) ? 'Your Previous Attempts' : 'Student Quiz Attempt Records'}
           </h3>
           <span className="text-xs text-slate-500 font-semibold">{attempts.length} Attempt(s) Logged</span>
         </div>
@@ -171,7 +171,7 @@ export default function QuizDetail() {
           <table className="w-full text-left text-sm text-slate-600" data-testid="quiz-attempts-table">
             <thead className="bg-slate-50 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
               <tr>
-                {!isStudent && <th className="py-3 px-6">Student</th>}
+                {!(quiz.current_user_role ? quiz.current_user_role === 'student' : isStudent) && <th className="py-3 px-6">Student</th>}
                 <th className="py-3 px-6">Attempt #</th>
                 <th className="py-3 px-6">Status</th>
                 <th className="py-3 px-6">Score</th>
@@ -181,7 +181,7 @@ export default function QuizDetail() {
             <tbody className="divide-y divide-slate-100">
               {attempts.map((att) => (
                 <tr key={att.id} className="hover:bg-slate-50/50" data-testid={`attempt-row-${att.id}`}>
-                  {!isStudent && (
+                  {!(quiz.current_user_role ? quiz.current_user_role === 'student' : isStudent) && (
                     <td className="py-4 px-6 font-bold text-slate-900">
                       {att.student_name}
                       <span className="text-xs text-slate-400 block font-normal">Student ID #{att.student_id}</span>
@@ -203,7 +203,7 @@ export default function QuizDetail() {
               ))}
               {attempts.length === 0 && (
                 <tr>
-                  <td colSpan={!isStudent ? 5 : 4} className="py-8 text-center text-slate-400 text-xs italic">
+                  <td colSpan={!(quiz.current_user_role ? quiz.current_user_role === 'student' : isStudent) ? 5 : 4} className="py-8 text-center text-slate-400 text-xs italic">
                     No attempts have been logged for this quiz yet.
                   </td>
                 </tr>

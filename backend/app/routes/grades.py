@@ -17,18 +17,7 @@ from ..permissions import (
 router = APIRouter(tags=["Grades"])
 
 
-@router.get("/courses/{course_id}/grades")
-def get_course_gradebook(
-    course_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Retrieve course gradebook.
-    - Students see ONLY their own row.
-    - Staff (Professors and assigned TAs) see the full class gradebook.
-    - TAs from other courses who are only students in this course see only their own row.
-    """
+def _build_gradebook(course_id: int, current_user: User, db: Session):
     course = verify_course_access(course_id, current_user, db)
     course_role = get_user_course_role(course_id, current_user, db)
 
@@ -39,18 +28,28 @@ def get_course_gradebook(
             select(Enrollment).where(
                 Enrollment.course_id == course_id,
                 Enrollment.role == "student",
+                Enrollment.status == "active",
             )
         ).all()
         student_ids = [e.user_id for e in enrollments]
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
 
-    assignments = db.scalars(
-        select(Assignment).where(Assignment.course_id == course_id).order_by(Assignment.id)
-    ).all()
-    quizzes = db.scalars(
-        select(Quiz).where(Quiz.course_id == course_id).order_by(Quiz.id)
-    ).all()
+    assign_query = select(Assignment).where(
+        Assignment.course_id == course_id,
+        Assignment.is_archived == False,
+    )
+    quiz_query = select(Quiz).where(
+        Quiz.course_id == course_id,
+        Quiz.is_archived == False,
+    )
+
+    if course_role == "student":
+        assign_query = assign_query.where(Assignment.is_published == True)
+        quiz_query = quiz_query.where(Quiz.is_published == True)
+
+    assignments = db.scalars(assign_query.order_by(Assignment.id)).all()
+    quizzes = db.scalars(quiz_query.order_by(Quiz.id)).all()
 
     results: List[Dict[str, Any]] = []
 
@@ -131,15 +130,70 @@ def get_course_gradebook(
 
         results.append(
             {
+                "id": student.id,
                 "student_id": student.id,
                 "student_name": student.full_name,
+                "name": student.full_name,
                 "username": student.username,
+                "items": student_items,
                 "grades": student_items,
                 "total_score": total_earned,
                 "max_total_score": total_possible,
                 "percentage": percentage,
             }
         )
+
+    return course, assignments, quizzes, results
+
+
+@router.get("/grades/me")
+def get_my_grades(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retrieve grades summary across all active enrolled courses for the current student."""
+    enrollments = db.scalars(
+        select(Enrollment).where(
+            Enrollment.user_id == current_user.id,
+            Enrollment.role == "student",
+            Enrollment.status == "active",
+        )
+    ).all()
+
+    response = []
+    for enr in enrollments:
+        course = enr.course
+        if not course or course.is_archived:
+            continue
+        try:
+            _, _, _, results = _build_gradebook(course.id, current_user, db)
+            if results:
+                response.append({
+                    "course_id": course.id,
+                    "course_code": course.code,
+                    "course_title": course.title,
+                    "grade_data": results[0],
+                })
+        except Exception:
+            continue
+
+    return response
+
+
+@router.get("/courses/{course_id}/grades")
+@router.get("/grades/course/{course_id}")
+def get_course_gradebook(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve course gradebook.
+    - Students see ONLY their own row.
+    - Staff (Professors and assigned TAs) see the full class gradebook.
+    - TAs from other courses who are only students in this course see only their own row.
+    """
+    course, assignments, quizzes, results = _build_gradebook(course_id, current_user, db)
 
     log_activity(
         db=db,
@@ -151,7 +205,20 @@ def get_course_gradebook(
         http_status=200,
         detail=f"User {current_user.username} viewed gradebook in course {course.code} (scope: {len(results)} rows).",
     )
-    return results
+    return {
+        "course": {"id": course.id, "code": course.code, "title": course.title},
+        "current_user_role": get_user_course_role(course_id, current_user, db),
+        "assignments": [
+            {"id": a.id, "title": a.title, "max_grade": a.max_grade}
+            for a in assignments
+        ],
+        "quizzes": [
+            {"id": q.id, "title": q.title, "max_attempts": q.max_attempts}
+            for q in quizzes
+        ],
+        "students": results,
+        "rows": results,
+    }
 
 
 @router.get("/courses/{course_id}/class-gradebook")
@@ -183,7 +250,8 @@ def get_class_wide_gradebook(
             detail="Access denied: students cannot view class-wide gradebooks.",
         )
 
-    return get_course_gradebook(course_id, current_user, db)
+    _, _, _, results = _build_gradebook(course_id, current_user, db)
+    return results
 
 
 @router.get("/courses/{course_id}/students/{student_id}/grades")
@@ -217,9 +285,8 @@ def get_single_student_grade(
             detail="Access denied: students can only view their own individual grades.",
         )
 
-    # Return grade info for this single student
-    gradebook = get_course_gradebook(course_id, current_user, db)
-    for row in gradebook:
+    _, _, _, results = _build_gradebook(course_id, current_user, db)
+    for row in results:
         if row["student_id"] == student_id:
             return row
 

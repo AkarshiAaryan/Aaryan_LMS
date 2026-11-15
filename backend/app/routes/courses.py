@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
@@ -6,7 +6,8 @@ from sqlalchemy import select, func
 from ..database import get_db
 from ..models import User, Course, Enrollment, Assignment, Quiz, Resource, Announcement, CoursePolicy
 from ..schemas import (
-    CourseOut, CourseCreate, CourseUpdate, AnnouncementOut, AnnouncementCreate,
+    CourseOut, CourseCreate, CourseUpdate, CourseArchive,
+    AnnouncementOut, AnnouncementCreate, AnnouncementUpdate,
     CoursePolicyOut
 )
 from ..auth import get_current_user
@@ -19,6 +20,7 @@ from ..permissions import (
 )
 
 router = APIRouter(prefix="/courses", tags=["Courses"])
+announcements_router = APIRouter(prefix="/announcements", tags=["Announcements"])
 
 
 def serialize_course(course: Course, current_user: User, db: Session) -> Dict[str, Any]:
@@ -26,19 +28,21 @@ def serialize_course(course: Course, current_user: User, db: Session) -> Dict[st
         select(func.count(Enrollment.id)).where(
             Enrollment.course_id == course.id,
             Enrollment.role == "student",
+            Enrollment.status == "active",
         )
     ) or 0
 
-    # Get TAs
+    # Get active TAs
     ta_enrollments = db.scalars(
         select(Enrollment).where(
             Enrollment.course_id == course.id,
             Enrollment.role == "ta",
+            Enrollment.status == "active",
         )
     ).all()
     ta_names = [e.user.full_name for e in ta_enrollments if e.user]
 
-    role_in_course = get_user_course_role(course.id, current_user, db)
+    role_in_course = get_user_course_role(course.id, current_user, db, include_suspended=True)
 
     return {
         "id": course.id,
@@ -50,6 +54,7 @@ def serialize_course(course: Course, current_user: User, db: Session) -> Dict[st
         "student_count": student_count,
         "current_user_role": role_in_course,
         "tas": ta_names,
+        "is_archived": getattr(course, "is_archived", False),
         "created_at": course.created_at,
     }
 
@@ -63,8 +68,11 @@ def list_courses(
     if current_user.role == "admin":
         courses = db.scalars(select(Course).order_by(Course.code)).all()
     else:
-        # Courses where user is instructor OR enrolled (as student or TA)
-        enrolled_course_ids = select(Enrollment.course_id).where(Enrollment.user_id == current_user.id)
+        # Courses where user is instructor OR enrolled (excluding revoked enrollments)
+        enrolled_course_ids = select(Enrollment.course_id).where(
+            Enrollment.user_id == current_user.id,
+            Enrollment.status != "revoked",
+        )
         courses = db.scalars(
             select(Course)
             .where(
@@ -218,7 +226,8 @@ def get_course_overview(
     student_count = db.scalar(
         select(func.count(Enrollment.id)).where(
             Enrollment.course_id == course_id,
-            Enrollment.role == "student"
+            Enrollment.role == "student",
+            Enrollment.status == "active",
         )
     ) or 0
 
@@ -229,9 +238,12 @@ def get_course_overview(
         .limit(5)
     ).all()
 
-    # Participants
+    # Active Participants
     enrollments = db.scalars(
-        select(Enrollment).where(Enrollment.course_id == course_id)
+        select(Enrollment).where(
+            Enrollment.course_id == course_id,
+            Enrollment.status == "active",
+        )
     ).all()
 
     tas = [
@@ -348,3 +360,157 @@ def post_course_announcement(
         author_name=current_user.full_name,
         created_at=announcement.created_at,
     )
+
+
+@router.put("/{course_id}/archive", response_model=CourseOut)
+def archive_course(
+    course_id: int,
+    payload: Optional[CourseArchive] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Archive or unarchive a course (Professor or Administrator only)."""
+    course = verify_course_professor_or_admin(course_id, current_user, db)
+    archive_status = payload.is_archived if payload is not None else True
+    course.is_archived = archive_status
+    db.commit()
+    db.refresh(course)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ARCHIVE_COURSE",
+        resource_type="course",
+        resource_id=str(course.id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Course {course.code} archive status set to {archive_status}.",
+    )
+    return serialize_course(course, current_user, db)
+
+
+def _update_announcement_impl(
+    announcement_id: int,
+    payload: AnnouncementUpdate,
+    course_id: Optional[int],
+    current_user: User,
+    db: Session,
+):
+    announcement = db.get(Announcement, announcement_id)
+    if not announcement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
+
+    if course_id is not None and announcement.course_id != course_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Announcement does not belong to this course.",
+        )
+
+    course = verify_course_professor_or_admin(announcement.course_id, current_user, db)
+
+    if payload.title is not None:
+        announcement.title = payload.title
+    if payload.content is not None:
+        announcement.content = payload.content
+
+    db.commit()
+    db.refresh(announcement)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="UPDATE_ANNOUNCEMENT",
+        resource_type="announcement",
+        resource_id=str(announcement.id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Updated announcement {announcement.id} in course {course.code}.",
+    )
+    return AnnouncementOut(
+        id=announcement.id,
+        course_id=announcement.course_id,
+        course_code=course.code,
+        title=announcement.title,
+        content=announcement.content,
+        author_id=announcement.author_id,
+        author_name=announcement.author.full_name if announcement.author else None,
+        created_at=announcement.created_at,
+    )
+
+
+def _delete_announcement_impl(
+    announcement_id: int,
+    course_id: Optional[int],
+    current_user: User,
+    db: Session,
+):
+    announcement = db.get(Announcement, announcement_id)
+    if not announcement:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Announcement not found.")
+
+    if course_id is not None and announcement.course_id != course_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Announcement does not belong to this course.",
+        )
+
+    course = verify_course_professor_or_admin(announcement.course_id, current_user, db)
+
+    db.delete(announcement)
+    db.commit()
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="DELETE_ANNOUNCEMENT",
+        resource_type="announcement",
+        resource_id=str(announcement_id),
+        outcome="ALLOW",
+        http_status=200,
+        detail=f"Deleted announcement {announcement_id} from course {course.code}.",
+    )
+    return {"message": "Announcement deleted successfully."}
+
+
+@router.put("/announcements/{announcement_id}", response_model=AnnouncementOut)
+@router.put("/{course_id}/announcements/{announcement_id}", response_model=AnnouncementOut)
+def update_announcement(
+    announcement_id: int,
+    payload: AnnouncementUpdate,
+    course_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Update an announcement (Course Professor or Administrator only)."""
+    return _update_announcement_impl(announcement_id, payload, course_id, current_user, db)
+
+
+@announcements_router.put("/{announcement_id}", response_model=AnnouncementOut)
+def update_announcement_alias(
+    announcement_id: int,
+    payload: AnnouncementUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _update_announcement_impl(announcement_id, payload, None, current_user, db)
+
+
+@router.delete("/announcements/{announcement_id}")
+@router.delete("/{course_id}/announcements/{announcement_id}")
+def delete_announcement(
+    announcement_id: int,
+    course_id: Optional[int] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Delete an announcement (Course Professor or Administrator only)."""
+    return _delete_announcement_impl(announcement_id, course_id, current_user, db)
+
+
+@announcements_router.delete("/{announcement_id}")
+def delete_announcement_alias(
+    announcement_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return _delete_announcement_impl(announcement_id, None, current_user, db)

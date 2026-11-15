@@ -57,6 +57,7 @@ class Course(Base):
     description = Column(Text, default="", nullable=False)
     department_id = Column(Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
     teacher_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    is_archived = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     # Relationships
@@ -84,6 +85,9 @@ class CourseSection(Base):
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     section_number = Column(String(20), nullable=False)  # 'SEC01', 'SEC02'
     title = Column(String(100), default="", nullable=False)
+    room = Column(String(50), default="", nullable=False)
+    meeting_times = Column(String(100), default="", nullable=False)
+    capacity = Column(Integer, default=30, nullable=False)
     instructor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
@@ -153,6 +157,7 @@ class Assignment(Base):
     is_group = Column(Boolean, default=False, nullable=False)
     allow_late = Column(Boolean, default=False, nullable=False)
     is_published = Column(Boolean, default=True, nullable=False)
+    is_archived = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     # Relationships
@@ -220,6 +225,7 @@ class Quiz(Base):
     time_limit_minutes = Column(Integer, default=30, nullable=False)
     max_attempts = Column(Integer, default=1, nullable=False)
     is_published = Column(Boolean, default=True, nullable=False)
+    is_archived = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now)
 
     # Relationships
@@ -246,6 +252,7 @@ class QuizQuestion(Base):
 
 class QuizAttempt(Base):
     __tablename__ = "quiz_attempts"
+    __table_args__ = (UniqueConstraint("quiz_id", "student_id", "attempt_number", name="uq_quiz_student_attempt_number"),)
 
     id = Column(Integer, primary_key=True, index=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
@@ -264,6 +271,7 @@ class QuizAttempt(Base):
 
 class QuizAnswer(Base):
     __tablename__ = "quiz_answers"
+    __table_args__ = (UniqueConstraint("attempt_id", "question_id", name="uq_quiz_answer_attempt_question"),)
 
     id = Column(Integer, primary_key=True, index=True)
     attempt_id = Column(Integer, ForeignKey("quiz_attempts.id", ondelete="CASCADE"), nullable=False)
@@ -352,6 +360,7 @@ class DiscussionThread(Base):
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    recipient_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     title = Column(String(150), nullable=False)
     content = Column(Text, nullable=False)
     is_pinned = Column(Boolean, default=False, nullable=False)
@@ -363,6 +372,7 @@ class DiscussionThread(Base):
     # Relationships
     course = relationship("Course", back_populates="discussion_threads")
     author = relationship("User", foreign_keys=[author_id])
+    recipient = relationship("User", foreign_keys=[recipient_id])
     posts = relationship("DiscussionPost", back_populates="thread", cascade="all, delete-orphan")
     group = relationship("Group")
 
@@ -372,6 +382,7 @@ class DiscussionPost(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     thread_id = Column(Integer, ForeignKey("discussion_threads.id", ondelete="CASCADE"), nullable=False)
+    parent_post_id = Column(Integer, ForeignKey("discussion_posts.id", ondelete="CASCADE"), nullable=True)
     author_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     content = Column(Text, nullable=False)
     is_flagged = Column(Boolean, default=False, nullable=False)
@@ -379,6 +390,7 @@ class DiscussionPost(Base):
 
     # Relationships
     thread = relationship("DiscussionThread", back_populates="posts")
+    parent_post = relationship("DiscussionPost", remote_side=[id], backref="replies")
     author = relationship("User", foreign_keys=[author_id])
 
 
@@ -416,6 +428,20 @@ class Lesson(Base):
     module = relationship("LearningModule", back_populates="lessons")
 
 
+class ModuleCompletion(Base):
+    __tablename__ = "module_completions"
+    __table_args__ = (UniqueConstraint("module_id", "student_id", name="uq_module_student_completion"),)
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("learning_modules.id", ondelete="CASCADE"), nullable=False)
+    student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    completed_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    module = relationship("LearningModule")
+    student = relationship("User", foreign_keys=[student_id])
+
+
 class CourseFile(Base):
     __tablename__ = "course_files"
 
@@ -423,6 +449,8 @@ class CourseFile(Base):
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     folder_path = Column(String(255), default="/", nullable=False)
     filename = Column(String(150), nullable=False)
+    storage_path = Column(String(500), default="", nullable=False)
+    mime_type = Column(String(100), default="application/octet-stream", nullable=False)
     file_size_bytes = Column(Integer, default=1024, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     access_level = Column(String(30), default="public", nullable=False)  # 'public', 'students', 'staff_only', 'group_only', 'private'
@@ -474,12 +502,31 @@ class GradeAppeal(Base):
     reviewer = relationship("User", foreign_keys=[reviewer_id])
 
 
+class AttendanceSession(Base):
+    __tablename__ = "attendance_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    section_id = Column(Integer, ForeignKey("course_sections.id", ondelete="SET NULL"), nullable=True)
+    session_date = Column(String(40), nullable=False)
+    title = Column(String(150), default="Lecture", nullable=False)
+    created_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    # Relationships
+    course = relationship("Course")
+    section = relationship("CourseSection")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    records = relationship("AttendanceRecord", back_populates="session", cascade="all, delete-orphan")
+
+
 class AttendanceRecord(Base):
     __tablename__ = "attendance_records"
 
     id = Column(Integer, primary_key=True, index=True)
     course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
     section_id = Column(Integer, ForeignKey("course_sections.id", ondelete="SET NULL"), nullable=True)
+    session_id = Column(Integer, ForeignKey("attendance_sessions.id", ondelete="CASCADE"), nullable=True)
     student_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     session_date = Column(String(40), nullable=False)
     status = Column(String(30), default="present", nullable=False)  # 'present', 'absent', 'excused', 'late'
@@ -490,5 +537,6 @@ class AttendanceRecord(Base):
 
     # Relationships
     course = relationship("Course", back_populates="attendance_records")
+    session = relationship("AttendanceSession", back_populates="records")
     student = relationship("User", foreign_keys=[student_id])
     recorded_by = relationship("User", foreign_keys=[recorded_by_id])

@@ -44,8 +44,9 @@ export default function AssignmentDetail() {
         setSubmissionContent(assignRes.data.my_submission.content);
       }
 
-      // If teacher or admin, fetch course submissions
-      if (!isStudent) {
+      // If staff in course, fetch course submissions
+      const courseRole = assignRes.data.current_user_role || (isStudent ? 'student' : (isTeacher ? 'professor' : 'admin'));
+      if (courseRole !== 'student') {
         try {
           const subRes = await api.get(`/assignments/${id}/submissions`);
           setSubmissions(subRes.data);
@@ -91,9 +92,10 @@ export default function AssignmentDetail() {
     e.preventDefault();
     setGradeError('');
 
-    const numericGrade = parseInt(inputGrade, 10);
-    if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
-      setGradeError('Grade must be an integer between 0 and 100.');
+    const maxGrade = assignment?.max_grade || 100;
+    const numericGrade = parseFloat(inputGrade);
+    if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > maxGrade) {
+      setGradeError(`Grade must be a number between 0 and ${maxGrade}.`);
       return;
     }
 
@@ -194,7 +196,7 @@ export default function AssignmentDetail() {
       )}
 
       {/* ===================== STUDENT SUBMISSION SECTION ===================== */}
-      {isStudent && (
+      {(assignment?.current_user_role ? assignment.current_user_role === 'student' : isStudent) && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm" data-testid="student-submission-container">
           <h2 className="text-lg font-bold text-slate-900 mb-4">Your Submission</h2>
 
@@ -251,7 +253,7 @@ export default function AssignmentDetail() {
       )}
 
       {/* ===================== TEACHER / ADMIN SUBMISSIONS ROSTER ===================== */}
-      {!isStudent && (
+      {!(assignment?.current_user_role ? assignment.current_user_role === 'student' : isStudent) && (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm" data-testid="teacher-submissions-roster">
           <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <div>

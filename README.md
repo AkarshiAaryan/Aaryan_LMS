@@ -1,279 +1,262 @@
-# GuardSLM Academic LMS & Benchmark V2 (2,000 Cases)
+# 🎓 Aaryan_LMS (GuardSLM Academic Portal & Security Benchmark)
 
-A high-fidelity academic Learning Management System (LMS) web application and evaluation testbed engineered specifically for evaluating **Small Language Models (SLMs)** and AI safety guards on contextual, policy-driven **Role-Based Access Control (RBAC)**.
-
-The platform simulates realistic higher-education workflows involving students, teaching assistants, professors, and institutional administrators across course navigation, assignment lifecycles, FERPA-compliant grade privacy, timed assessments, confidential staff resources, discussion forums, learning modules, peer reviews, attendance recording, and security audit telemetry.
+> A modern, full-featured University Learning Management System (LMS) built with **React 18**, **Tailwind CSS**, and **FastAPI**, engineered with enterprise-grade **Role-Based Access Control (RBAC)**, FERPA-compliant privacy, and an integrated 2,000-case AI safety evaluation benchmark.
 
 ---
 
-## 1. Quick Start & Local Setup
+## 📖 Welcome! What is Aaryan_LMS?
+
+Think of **Aaryan_LMS** as an institutional university platform like Canvas, Blackboard, or Moodle—built specifically to model authentic academic workflows between **Students**, **Teaching Assistants (TAs)**, **Professors**, and **Administrators**.
+
+Whether you are a developer, an academic evaluator, or exploring the platform for the first time, this guide explains **every single feature**, how the system behaves, and how to get started in seconds.
+
+---
+
+## ⚡ Quick Start: Run the Project in 2 Steps
 
 ### Prerequisites
 - **Python 3.10+** (Python 3.12 recommended)
-- **Node.js 18+** & `npm`
-- Available ports: `5173` (Frontend UI), `8000` (Backend REST API)
+- **Node.js 18+** with `npm`
 
-### Launch Option A: Helper Scripts (Recommended)
-
-From the project root:
+### Method 1: Helper Scripts (Recommended)
+Open two terminal windows in the project directory:
 
 ```bash
-# Terminal 1: Backend API
+# Terminal 1: Backend API & Database
 ./start_backend.sh
 
-# Terminal 2: Frontend UI
+# Terminal 2: Frontend Web Application
 ./start_frontend.sh
 ```
 
-### Launch Option B: Manual Setup
-
-**Terminal 1 — Backend API (FastAPI):**
+### Method 2: Manual Commands
 ```bash
+# Terminal 1: Backend
 cd backend
 pip install -r requirements.txt
 python3 -m app.seed
 python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
 
-**Terminal 2 — Frontend UI (React + Vite):**
-```bash
+# Terminal 2: Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-### Local Endpoints
-
-| Service | Local URL | Description |
-| :--- | :--- | :--- |
-| **Frontend Portal** | `http://localhost:5173` | React 18 / Tailwind CSS Academic Web App |
-| **Backend API** | `http://localhost:8000` | FastAPI ASGI Application |
-| **Interactive Docs (Swagger)** | `http://localhost:8000/docs` | OpenAPI 3.1 interactive API documentation |
-| **ReDoc Documentation** | `http://localhost:8000/redoc` | Alternative API reference |
-| **Relational Database** | `backend/guardslm.db` | Embedded SQLite database (auto-seeded) |
-
-### Resetting the Database
-To clear any state modifications and reset the database to the pristine benchmark state (54 personas, 4 departments, 8 sections):
-```bash
-cd backend
-rm -f guardslm.db
-python3 -m app.seed
-```
+### 🌐 Where to Open
+- **Web Application Portal**: [http://localhost:5173](http://localhost:5173)
+- **Interactive API Documentation (Swagger)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Alternative API Docs (ReDoc)**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
-## 2. GuardSLM Benchmark V2 (2,000 Cases)
+## 🔑 Demo Accounts & 1-Click Persona Login
 
-The **`research_snapshots_2000/`** directory contains the full 2,000-case evaluation dataset designed to evaluate SLMs as contextual authorization guards for autonomous browser agents.
+You never need to remember complex credentials. The sign-in page includes a **1-click Persona Selector** at the top that automatically signs you in as any user in the university!
 
-### Key Dataset Metrics
-- **2,000 Benchmark Cases (`CASE-0001` through `CASE-2000`)**: Spanning 13 scenario families.
-- **1,000 Controlled Contrast Pairs**: Strict pairwise control varying exactly one dimension: Identity, Scope, Ownership, Lifecycle, or Time.
-- **Decision Class Balance**: **958 ALLOW (47.9%) / 1,042 BLOCK (52.1%)**.
-- **152 Multi-Step Attack Sequences**: Multi-action chains testing escalation and session state tracking.
-- **77 Adversarial Prompt Injections**: In-context jailbreak and prompt override attacks.
-- **54 Realistic Personas**: Spanning 4 academic departments (`CS`, `EE`, `HCI`, `DS`).
-- **Strict Double-Blind Isolation**:
-  - `slm_inputs/`: 2,000 self-contained prompt packages (Markdown) containing actor context, target action proposal, grounding policy text, and pre-action accessibility tree (`ariaSnapshot` YAML). **Zero ground-truth labels, decisions, or rationales are leaked.**
-  - `raw_snapshots/pages/`: 2,000 raw pre-action accessibility trees.
-  - `raw_snapshots/policies/`: 2,000 raw policy page accessibility trees.
-  - `manifest.csv`: Benchmark catalog with metadata, family codes, and contrast pair linkages (labels excluded).
-  - `evaluation_only/ground_truth.csv`: Isolated answer key with expected decisions (`ALLOW`/`BLOCK`), rationales, failure modes, and route mappings.
-  - `reports/`: `coverage_report.md`, `contrast_pair_analysis.md`, and `distribution_stats.json`.
-  - `slm_inputs.zip` & `research_snapshots_2000.zip`: Portable distribution archives.
+- **Universal Password for ALL accounts**: `GuardSLM2026!`
 
-### Benchmark CLI (`tools.benchmark.cli`)
-A unified CLI tool manages the generation, validation, and statistical analysis of the benchmark:
+### Popular Demo Accounts to Try:
+
+| Persona | Role | Who Are They? | Why Log In As Them? |
+| :--- | :---: | :--- | :--- |
+| **`student01`** | Student | Asha Mehta | Enrolled in `CSE301` & `CSE302`. View student grades, submit assignments, take quizzes, read modules. |
+| **`ta01`** | TA / Student | Sam Lee | **Dual-Role Persona!** He is the **Teaching Assistant** for `CSE301` (can grade peers), but simultaneously a **regular Student** in `CSE302` (can only submit homework). |
+| **`prof01`** | Professor | Dr. Mira Shah | Computer Science Department Chair. Can create assignments, publish grades, resolve grade appeals, and edit courses. |
+| **`prof02`** | Professor | Dr. Kabir Rao | Networks Professor (`CSE302`). Notice that Prof Shah cannot modify Prof Rao's courses! |
+| **`admin01`** | Administrator | Alex Admin | University Dean / Super Admin. Manages departments, archives courses, and views the live security audit log. |
+
+---
+
+## 🌟 Features & Functionality (What Can You Do?)
+
+### 1. 🎓 Student Experience
+- **Interactive Course Hub**: View enrolled courses (`CSE301: Database Systems`, `CSE302: Computer Networks`, `CSE303: Operating Systems`, `HCI401: Human-Computer Interaction`).
+- **Homework & Assignment Submission**:
+  - Upload text, source code, or files before the deadline.
+  - Supports both **Individual** and **Group Assignments** (Team Alpha, Beta, etc.). Group submissions automatically sync so teammates don't overwrite each other's work!
+  - Real-time countdown timers and late submission tracking.
+- **Timed Quizzes & Assessments**:
+  - Take online multiple-choice quizzes with live countdown timers.
+  - Enforced attempt limits (e.g., maximum 2 attempts).
+  - Secure answer keys: correct answers remain hidden until the official class release date.
+- **Confidential Personal Gradebook**:
+  - Full FERPA compliance: students can **only** see their own grades and feedback.
+  - "Draft" grades currently being reviewed by TAs are safely hidden until the professor publishes them.
+- **Class Discussion Forums**:
+  - Ask course questions with **nested replies**.
+  - Start **Private Confidential Threads**: mark a question as "Private" so only you and the teaching staff can see it.
+- **Structured Learning Modules**:
+  - Browse step-by-step lecture units and lessons.
+  - Check off completed modules as you study.
+  - Prerequisite protection: upcoming modules stay locked until their release date or until prerequisites are completed.
+- **Learning Resources & Course Files**:
+  - Browse syllabi, lecture slides, and laboratory guides.
+  - **In-App Document Viewer**: Click **"View"** on any resource to open an interactive document preview right in the app.
+  - **Instant Download**: Click **"Download"** to save documents directly to your computer without external DNS errors.
+- **Double-Blind Peer Reviews**:
+  - Review your classmates' submissions anonymously. You see `Anonymous Reviewer` so grading is fair and unbiased.
+- **Grade Appeals**:
+  - If you believe an exam or homework was marked incorrectly, submit a formal **Grade Appeal** with your justification for instructor review.
+- **Attendance Excuses**:
+  - Check your lecture attendance record and submit an official excuse if you were absent.
+
+---
+
+### 2. 🧑‍🏫 Teaching Assistant (TA) Experience
+- **Smart Dual-Role Awareness**:
+  - If a TA is grading in their staff course (`CSE301`), they receive full instructor grading panels.
+  - If that same TA visits a class where they are a student (`CSE302`), the LMS automatically switches them to the student submission view!
+- **Decimal Grading & Feedback**:
+  - Grade submissions with fractional scores (e.g. `87.5 / 100`) and leave detailed feedback notes.
+- **Grade History & Audit Trail**:
+  - If a score is edited, the system saves the prior score, who changed it, and why.
+- **Forum Moderation**:
+  - Pin important discussions to the top of the forum.
+  - Lock resolved threads to prevent further student chatter.
+  - Flag inappropriate messages for review.
+- **Section Attendance**:
+  - Take attendance for assigned discussion sections and record Present / Absent / Excused statuses.
+
+---
+
+### 3. 👨‍🏫 Professor & Instructor Experience
+- **Course Administration**:
+  - Create and edit assignments, instructions, and due dates.
+  - Design quizzes, specify time limits, and set answer key release dates.
+  - Upload lecture notes, syllabus files, and staff-only grading rubrics.
+- **Grade Publishing Controls**:
+  - Keep grades in **Draft Mode** while the grading team marks submissions.
+  - Click **"Publish Grades"** to release final grades to the entire roster simultaneously.
+- **Grade Appeal Adjudication**:
+  - Review student grade appeals, approve or reject them, and adjust scores with automatic audit trails.
+- **Course Soft-Archiving**:
+  - Archive completed semesters (`PUT /courses/{id}/archive`) to prevent further edits while keeping records accessible.
+
+---
+
+### 4. 🛡️ University Administrator Experience
+- **Academic Departments**:
+  - Create, view, update, and manage university departments (`CS`, `EE`, `HCI`, `DS`).
+- **Student Enrollment Lifecycle**:
+  - Update student enrollment statuses between:
+    - `active`: Full student access.
+    - `suspended`: Temporarily frozen (blocked from taking quizzes or submitting work).
+    - `revoked`: Withdrawn / expelled (completely blocked with HTTP 403 Forbidden).
+  - Reassign students to different lecture sections.
+- **Real-Time Security & Telemetry Audit Log (`/admin/logs`)**:
+  - A live institutional security stream tracking every attempted action in the university.
+  - Displays the timestamp, username, role, target resource, HTTP status, and outcome (`ALLOW` or `BLOCK`).
+
+---
+
+## 🔒 Security & Privacy: How Does the LMS Protect Data?
+
+1. **Dual-Layer RBAC (Role-Based Access Control)**:
+   - Your access is determined not just by who you are globally, but by **which course you are currently looking at**.
+2. **FERPA Student Privacy**:
+   - Students can never inspect other students' homework, exam attempts, or grades.
+   - Draft grades remain confidential until published.
+3. **No Traversal File Storage (`storage.py`)**:
+   - Files uploaded to the system are sanitized to prevent directory traversal attacks (e.g. `../../etc/passwd`).
+   - Files are stored on disk with unique UUIDs and SHA-256 hashes.
+4. **Time Machine Simulation Clock (`clock.py`)**:
+   - Testing deadlines is normally hard because you have to wait for the system clock.
+   - Aaryan_LMS supports an `X-Simulation-Time` header, allowing researchers and automated tests to test future deadlines without changing your computer's clock!
+5. **Database Foreign Key Integrity**:
+   - SQLite foreign keys are strictly enforced on every database connection (`PRAGMA foreign_keys = ON`).
+6. **Automatic Schema Migrations (`migrate_db.py`)**:
+   - Whenever the backend starts up, it automatically checks all 28 database tables and columns, adding missing fields without erasing existing data.
+
+---
+
+## 🔬 AI Safety & Benchmark Research (GuardSLM V2)
+
+Beyond being a university LMS, this repository serves as a world-class evaluation benchmark for **Small Language Models (SLMs)** functioning as **AI Authorization Guards**:
+
+- **2,000 Verified Test Cases (`research_snapshots_2000/`)**: Spanning 13 scenario families.
+- **1,000 Controlled Contrast Pairs**: Two test cases differing by exactly **one** variable (e.g., Professor vs TA on the same file) to test if AI models can detect nuanced security boundaries.
+- **Strict Double-Blind Testing**: Public evaluation packages contain **zero labels or answers**, guaranteeing genuine evaluation without data leakage.
+- **20-Point Compliance Validator**: Validates manifest integrity, decision balance (47.9% ALLOW / 52.1% BLOCK), and 100% label isolation.
 
 ```bash
-# Display dataset distribution and metrics
+# View dataset distribution and statistics
 python3 -m tools.benchmark.cli stats
 
-# Execute full 20-point automated validation suite
+# Run full 20-point automated compliance validator
 python3 -m tools.benchmark.cli validate
-
-# Re-generate the 2,000-case dataset
-python3 -m tools.benchmark.cli generate --output-dir research_snapshots_2000
 ```
 
 ---
 
-## 3. System Architecture & Tech Stack
+## 🧪 Quality Assurance & Test Suite
 
-```text
-┌────────────────────────────────────────────────────────┐
-│             React 18 SPA (Vite + Tailwind)             │
-│        Context-aware UI with 1-click Persona Login     │
-└──────────────────────────┬─────────────────────────────┘
-                           │ HTTP / JSON (JWT Bearer Token)
-                           │ X-Simulation-Time Header (Temporal Context)
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│             FastAPI Backend (Python 3.12)              │
-│       Centralized Permissions Engine (permissions.py)  │
-│        Deterministic Simulation Time (clock.py)        │
-└──────────────┬───────────────────────────┬─────────────┘
-               │                           │
-               ▼                           ▼
-┌──────────────────────────┐  ┌──────────────────────────┐
-│  SQLite / SQLAlchemy ORM │  │ Real-time Activity Telemetry│
-│   (24 relational tables) │  │  (ALLOW vs BLOCK Audits)  │
-└──────────────────────────┘  └──────────────────────────┘
-```
+The entire backend and frontend are protected by automated tests:
 
-- **Backend**: FastAPI, SQLAlchemy ORM, SQLite (`guardslm.db`), Pydantic v2 validation, python-jose (JWT auth), passlib/bcrypt.
-- **Frontend**: React 18, Vite, React Router v6, Axios, Tailwind CSS, Lucide React icons.
-- **Testing & Benchmark**: Playwright MCP, Pytest test suites (63 tests), accessibility tree ariaSnapshots.
-- **Simulation Time**: Header-driven simulation time (`X-Simulation-Time: YYYY-MM-DDTHH:MM:SSZ`) enables deterministic testing of time-based access policies without altering the host OS clock.
-
----
-
-## 4. Dual-Layer Contextual RBAC
-
-The LMS enforces authorization based on a **two-layer identity model**:
-1. **Global Account Role**: Broad classification (`admin`, `professor`, `ta`, `student`).
-2. **Course-Scoped Role**: Concrete privilege determined by enrollment in a specific course (`instructor`, `ta`, `student`, `auditor`).
-3. **Enrollment Status**: `active`, `suspended` (blocked from interactions), or `revoked` (expelled/withdrawn).
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│ Role Scoping Matrix                                                    │
-├──────────────┬──────────────────┬──────────────────┬───────────────────┤
-│ Persona      │ CSE301 (DBMS)    │ CSE302 (Networks)│ HCI401 (HCI)      │
-├──────────────┼──────────────────┼──────────────────┼───────────────────┤
-│ admin01      │ Site Admin       │ Site Admin       │ Site Admin        │
-│ prof01       │ Course Professor │ No Membership    │ No Membership     │
-│ prof02       │ No Membership    │ Course Professor │ Course Professor  │
-│ ta01         │ Teaching Asst    │ Student (Enrolled│ No Membership     │
-│ ta04         │ Student (Enrolled│ No Membership    │ No Membership     │
-│ student01    │ Student (Enrolled│ Student (Enrolled│ Student (Alpha)   │
-│ student14    │ No Membership    │ No Membership    │ No Membership     │
-└──────────────┴──────────────────┴──────────────────┴───────────────────┘
-```
-
-### Core Role Rules:
-- **`ta01` (Sam Lee)** is a Teaching Assistant in `CSE301` (can grade submissions and view staff rubrics), but is an enrolled Student in `CSE302` (can only view personal grades and is blocked from staff actions).
-- **`prof01` (Dr. Mira Shah)** is the instructor for `CSE301` and `CSE303`, but has zero administrative authority in `CSE302` or `HCI401`.
-- **`student14` (Omar Farooq)** is enrolled exclusively in `CSE303`; accessing `CSE301`, `CSE302`, or `HCI401` results in `403 Forbidden`.
-
----
-
-## 5. Personas & Credentials (54 Users)
-
-All accounts use the standard demo password:
-```text
-GuardSLM2026!
-```
-
-The sign-in screen at `http://localhost:5173/login` includes a **1-click Persona Selector** to switch between accounts instantly.
-
-| Role | Count | Usernames | Responsibilities |
-| :--- | :---: | :--- | :--- |
-| **Admin** | 2 | `admin01`, `admin02` | Institutional administrators; unrestricted course and audit access. |
-| **Professor** | 4 | `prof01` - `prof04` | Department chairs and course directors across CS, EE, HCI, DS. |
-| **Teaching Assistant** | 8 | `ta01` - `ta08` | Course staff with section-specific grading and moderation permissions. |
-| **Student** | 40 | `student01` - `student40` | Learners across sections, groups, and enrollment statuses. |
-
----
-
-## 6. Comprehensive LMS Domain Modules
-
-1. **Course Workspace & Navigation (`CourseDetail.jsx`)**: Syllabus, announcements, and course tabs.
-2. **Assignments & Submissions (`assignments.py`, `submissions.py`)**: Due dates, late submission policies, grading workflows, draft/published states, and group work confidentiality.
-3. **FERPA Gradebook (`submissions.py`, `Gradebook.jsx`)**: Strict student grade isolation; grade override audit trail.
-4. **Timed Assessments & Quizzes (`quizzes.py`)**: Time-window scheduling, attempt quotas, and answer-key masking.
-5. **Discussion Forums (`discussions.py`)**: Public class discussions, confidential student-staff private threads, locked thread moderation, and team-scoped discussions.
-6. **Learning Modules & Lessons (`modules.py`)**: Chronologically scheduled module unlocks (`unlock_date`), lesson content visibility, and draft module controls.
-7. **Course Files & Storage Permissions (`files.py`)**: Multi-tiered file access (`public`, `students`, `staff_only`, `private`, `group_only`), time-based expiration dates, and archival status.
-8. **Double-Blind Peer Reviews & Grade Appeals (`peer_reviews.py`)**: Anonymous student-to-student peer assessment (author sees `Anonymous Reviewer` with redacted reviewer ID; staff sees full attribution); student grade appeal workflow with professor resolution.
-9. **Section Attendance Records (`attendance.py`)**: Section-scoped attendance tracking by TAs/professors; student excuse request workflow; instructor session locking.
-10. **Institutional Admin & Security Auditing (`/admin`)**: User provisioning, roster management, and live audit telemetry of all access decisions (`ALLOW` vs `BLOCK`).
-
----
-
-## 7. Baseline Preservation
-
-To ensure backward compatibility and historical reproducibility:
-- **Pilot Dataset**: Preserved in `research_snapshots/` (20 verified cases).
-- **100-Case Dataset**: Preserved in `research_snapshots_100/` (100 verified cases, 48 ALLOW / 52 BLOCK).
-- **Benchmark V2 Dataset**: Generated in `research_snapshots_2000/` (2,000 verified cases, 958 ALLOW / 1,042 BLOCK).
-
----
-
-## 8. Testing & Quality Assurance
-
-### Automated Backend Test Suite (Pytest)
+### Run Automated Backend Tests (79 Tests)
 ```bash
-cd backend
-python3 -m pytest app/tests -v
+python3 -m pytest backend/app/tests -v
 ```
-*Current test suite: **63 passed, 0 failed** (includes authentication, scenarios, security regressions, and new domain modules).*
+*(Tests pass 100% in ~15-20 seconds across authentication, RBAC scenarios, file storage, quiz denominator, enrollment statuses, and new modules).*
 
-### Frontend Build Verification
+### Run Frontend Production Build
 ```bash
 cd frontend
 npm run build
 ```
-
-### Benchmark V2 20-Point Compliance Verification
-```bash
-python3 -m tools.benchmark.cli validate
-```
-*Current verification status: **20/20 checks passed perfectly**.*
+*(Builds clean Vite production bundle in ~4.8s with 0 errors).*
 
 ---
 
-## 9. Project Directory Tree
+## 📂 Project Directory Structure
 
 ```text
 guard-slm-lms/
-├── start_backend.sh                # Script to launch FastAPI server
-├── start_frontend.sh               # Script to launch Vite dev server
-├── README.md                       # Master project documentation
+├── start_backend.sh                # 1-click startup script for FastAPI backend
+├── start_frontend.sh               # 1-click startup script for React frontend
+├── README.md                       # Master system documentation (this file)
 │
 ├── backend/
-│   ├── requirements.txt            # Python dependencies (FastAPI, SQLAlchemy, etc.)
-│   ├── guardslm.db                 # Auto-seeded SQLite database (24 tables, 54 users)
+│   ├── requirements.txt            # Python backend dependencies
+│   ├── guardslm.db                 # SQLite database (auto-seeded with 54 personas)
+│   ├── storage/files/              # Secure local disk file storage directory
 │   └── app/
-│       ├── main.py                 # FastAPI application & route registration
-│       ├── database.py             # SQLAlchemy engine & sessionmaker
-│       ├── clock.py                # Deterministic Simulation Time service
-│       ├── models.py               # 24 Relational SQLAlchemy ORM models
-│       ├── schemas.py              # Pydantic validation & response schemas
-│       ├── auth.py                 # JWT authentication & bcrypt password hashing
-│       ├── permissions.py          # Centralized RBAC authorization engine
-│       ├── seed.py                 # Database seeder (54 users, 4 courses, 8 sections)
-│       ├── routes/                 # Modular REST API endpoints
-│       └── tests/                  # 63 Automated unit and regression tests
+│       ├── main.py                 # FastAPI application & startup migration lifespan
+│       ├── database.py             # SQLite database engine with foreign key enforcer
+│       ├── clock.py                # Time simulation service (X-Simulation-Time)
+│       ├── storage.py              # File path sanitization & disk storage subsystem
+│       ├── migrate_db.py           # Auto-migration script for 28 database models
+│       ├── models.py               # 28 Relational SQLAlchemy database models
+│       ├── schemas.py              # Pydantic data validation & serialization models
+│       ├── auth.py                 # JWT access tokens & bcrypt password encryption
+│       ├── permissions.py          # Centralized course-effective RBAC engine
+│       ├── seed.py                 # 54 Personas, 4 courses, departments & assessments
+│       ├── routes/                 # REST API routes (courses, files, grades, etc.)
+│       └── tests/                  # 79 Automated regression & security tests
 │
 ├── frontend/
 │   ├── package.json                # React 18, React Router v6, Tailwind CSS
-│   ├── vite.config.js              # Vite bundler & proxy configuration
-│   └── src/                        # React UI components and pages
+│   ├── vite.config.js              # Vite bundler with API reverse proxy
+│   └── src/
+│       ├── api.js                  # Axios HTTP client with JWT interceptor
+│       ├── components/             # Navigation, Sidebar, Modals, Status Badges
+│       ├── context/                # Authentication & User Role context
+│       └── pages/                  # CourseDetail, Gradebook, Quizzes, Resources, etc.
 │
-├── tools/benchmark/                # Benchmark V2 declarative generation infrastructure
+├── tools/benchmark/                # Benchmark V2 generation & validation engine
 │   ├── catalogs/                   # Grounding policies, personas, and families
 │   ├── generation/                 # Case generator & deduplication engine
-│   ├── schemas/                    # BenchmarkCase dataclass
-│   ├── capture/                    # Accessibility tree capture & packaging
-│   ├── validation/                 # 20-Point automated validator
-│   └── cli.py                      # CLI entry point (generate, validate, stats)
+│   ├── validation/                 # 20-Point automated compliance validator
+│   └── cli.py                      # Benchmark CLI (stats, validate, generate)
 │
-├── research_snapshots_2000/         # GuardSLM Benchmark V2 Dataset (2,000 cases)
-│   ├── slm_inputs/                 # 2,000 Double-blind Markdown prompt packages
-│   ├── raw_snapshots/              # 2,000 Page & 2,000 Policy raw accessibility trees
-│   ├── manifest.csv                # Benchmark catalog without labels
-│   ├── evaluation_only/            # Isolated ground_truth.csv answer key
-│   ├── reports/                    # Inventory, coverage, and validation reports
-│   └── *.zip                       # Portable zip archives of inputs and dataset
-│
-├── research_snapshots_100/         # Immutable 100-case baseline dataset
-├── research_snapshots/             # Immutable 20-case pilot dataset
-└── docs/                           # Architecture, database schema, & overhaul reports
+├── research_snapshots_2000/         # GuardSLM 2,000-case evaluation benchmark dataset
+├── research_snapshots_100/         # Baseline 100-case dataset (preserved)
+├── research_snapshots/             # Baseline 20-case pilot dataset (preserved)
+└── docs/                           # Technical architecture, schemas, and reports
 ```
 
 ---
 
-## 10. License & Citation
+## 📄 License & Attribution
 
-Developed for academic research into Small Language Model (SLM) authorization guards and contextual AI safety.
+Developed for academic education and AI safety research into Small Language Model (SLM) authorization guards. Built with standard open-source tools: React, Vite, Tailwind CSS, FastAPI, and SQLAlchemy.

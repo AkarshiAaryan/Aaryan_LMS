@@ -19,33 +19,35 @@ export default function QuizAttempt() {
     const fetchAttemptInfo = async () => {
       try {
         setLoading(true);
-        // We know attempt ID; we can load quiz attempts or quiz info
-        // Let's get quiz info
-        // Try getting attempts for student or fetch quizzes
-        const meRes = await api.get('/auth/me');
-        // Fetch all quizzes to locate attempt's quiz
-        const coursesRes = await api.get('/courses');
-        let matchedQuiz = null;
-        for (const c of coursesRes.data) {
-          const qRes = await api.get(`/courses/${c.id}/quizzes`);
-          for (const q of qRes.data) {
-            const atts = await api.get(`/quizzes/${q.id}/attempts`);
-            const matchedAtt = atts.data.find(a => a.id === parseInt(attemptId, 10));
-            if (matchedAtt) {
-              setAttempt(matchedAtt);
-              matchedQuiz = q;
-              break;
-            }
-          }
-          if (matchedQuiz) break;
-        }
-
-        if (matchedQuiz) {
-          // Fetch full quiz with questions
-          const fullQuiz = await api.get(`/quizzes/${matchedQuiz.id}`);
+        try {
+          const attRes = await api.get(`/attempts/${attemptId}`);
+          setAttempt(attRes.data);
+          const fullQuiz = await api.get(`/quizzes/${attRes.data.quiz_id}`);
           setQuiz(fullQuiz.data);
-        } else {
-          setError('Quiz attempt could not be identified or accessed.');
+        } catch (directErr) {
+          // Fallback for older servers
+          const coursesRes = await api.get('/courses');
+          let matchedQuiz = null;
+          for (const c of coursesRes.data) {
+            const qRes = await api.get(`/courses/${c.id}/quizzes`);
+            for (const q of qRes.data) {
+              const atts = await api.get(`/quizzes/${q.id}/attempts`);
+              const matchedAtt = atts.data.find(a => a.id === parseInt(attemptId, 10));
+              if (matchedAtt) {
+                setAttempt(matchedAtt);
+                matchedQuiz = q;
+                break;
+              }
+            }
+            if (matchedQuiz) break;
+          }
+
+          if (matchedQuiz) {
+            const fullQuiz = await api.get(`/quizzes/${matchedQuiz.id}`);
+            setQuiz(fullQuiz.data);
+          } else {
+            setError('Quiz attempt could not be identified or accessed.');
+          }
         }
       } catch (err) {
         setError(err.response?.data?.detail || 'Failed to initialize quiz assessment.');

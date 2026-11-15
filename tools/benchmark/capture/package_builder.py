@@ -9,26 +9,31 @@ import csv
 import json
 import zipfile
 from collections import Counter
-from typing import List, Dict, Any, Optional
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Tuple
 
 from ..schemas.case_schema import BenchmarkCase
 from ..generation.case_generator import CaseGenerator
 from ..generation.deduplicator import Deduplicator
 
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_BASE_DIR = str(REPO_ROOT / "research_snapshots_2000")
+DEFAULT_TEMPLATE_POOL_DIR = str(REPO_ROOT / "research_snapshots_100" / "raw_snapshots")
+
 
 class PackageBuilder:
     def __init__(
         self,
-        base_dir: str = "/home/regenesis/Desktop/guard-slm-lms/research_snapshots_2000",
-        template_pool_dir: str = "/home/regenesis/Desktop/guard-slm-lms/research_snapshots_100/raw_snapshots",
+        base_dir: Optional[str] = None,
+        template_pool_dir: Optional[str] = None,
     ):
-        self.base_dir = base_dir
-        self.template_pool_dir = template_pool_dir
-        self.pages_dir = os.path.join(base_dir, "raw_snapshots", "pages")
-        self.policies_dir = os.path.join(base_dir, "raw_snapshots", "policies")
-        self.slm_inputs_dir = os.path.join(base_dir, "slm_inputs")
-        self.eval_dir = os.path.join(base_dir, "evaluation_only")
-        self.reports_dir = os.path.join(base_dir, "reports")
+        self.base_dir = str(base_dir) if base_dir else DEFAULT_BASE_DIR
+        self.template_pool_dir = str(template_pool_dir) if template_pool_dir else DEFAULT_TEMPLATE_POOL_DIR
+        self.pages_dir = os.path.join(self.base_dir, "raw_snapshots", "pages")
+        self.policies_dir = os.path.join(self.base_dir, "raw_snapshots", "policies")
+        self.slm_inputs_dir = os.path.join(self.base_dir, "slm_inputs")
+        self.eval_dir = os.path.join(self.base_dir, "evaluation_only")
+        self.reports_dir = os.path.join(self.base_dir, "reports")
         
         self.templates: Dict[str, str] = {}
         self.policy_templates: Dict[str, str] = {}
@@ -54,23 +59,22 @@ class PackageBuilder:
                     with open(os.path.join(policies_src, fname), "r", encoding="utf-8") as f:
                         self.policy_templates[fname] = f.read().strip()
 
-    def _get_page_template(self, case: BenchmarkCase) -> str:
-        """Select and tailor the best matching genuine Playwright page snapshot."""
-        # Family-based template selection mapping from the 100 verified cases
+    def _get_page_template(self, case: BenchmarkCase) -> Tuple[str, str]:
+        """Select and tailor genuine Playwright page snapshot based on workflow domain (independent of expected decision)."""
         family_map = {
-            "FAM01": "TC01_page.md" if case.expected_decision == "ALLOW" else "TC02_page.md",
-            "FAM02": "TC05_page.md" if case.expected_decision == "ALLOW" else "TC06_page.md",
-            "FAM03": "TC10_page.md" if case.expected_decision == "ALLOW" else "TC11_page.md",
-            "FAM04": "TC33_page.md" if case.expected_decision == "ALLOW" else "TC34_page.md",
-            "FAM05": "TC19_page.md" if case.expected_decision == "ALLOW" else "TC20_page.md",
-            "FAM06": "TC45_page.md" if case.expected_decision == "ALLOW" else "TC46_page.md",
-            "FAM07": "TC08_page.md" if case.expected_decision == "ALLOW" else "TC09_page.md",
-            "FAM08": "TC70_page.md" if case.expected_decision == "ALLOW" else "TC71_page.md",
-            "FAM09": "TC100_page.md" if case.global_role == "admin" else "TC01_page.md",
-            "FAM10": "TC21_page.md" if case.expected_decision == "ALLOW" else "TC22_page.md",
-            "FAM11": "TC05_page.md" if case.expected_decision == "ALLOW" else "TC06_page.md",
-            "FAM12": "TC04_page.md" if case.expected_decision == "ALLOW" else "TC03_page.md",
-            "FAM13": "TC01_page.md" if case.expected_decision == "ALLOW" else "TC03_page.md",
+            "FAM01": "TC01_page.md",  # Grades & Gradebook
+            "FAM02": "TC05_page.md",  # Submissions & Deadlines
+            "FAM03": "TC10_page.md",  # Quizzes & Exams
+            "FAM04": "TC33_page.md",  # Modules & Lessons
+            "FAM05": "TC19_page.md",  # Course Files
+            "FAM06": "TC45_page.md",  # Discussions
+            "FAM07": "TC08_page.md",  # Peer Reviews & Appeals
+            "FAM08": "TC70_page.md",  # Attendance & Scheduling
+            "FAM09": "TC100_page.md" if case.global_role == "admin" else "TC01_page.md",  # Admin Portal
+            "FAM10": "TC21_page.md",  # Cross-Course Isolation
+            "FAM11": "TC05_page.md",  # Multi-Step Workflows
+            "FAM12": "TC04_page.md",  # Privilege Shifts
+            "FAM13": "TC01_page.md",  # Pretexts & Adversarial
         }
         
         tpl_key = family_map.get(case.family_id, "TC01_page.md")
@@ -90,11 +94,26 @@ class PackageBuilder:
         if case.course_code and case.course_code != "INSTITUTIONAL":
             tailored = re.sub(r'CSE\d{3}|HCI401', case.course_code, tailored)
             
-        return tailored
+        return tailored, tpl_key
 
-    def _get_policy_template(self, case: BenchmarkCase) -> str:
-        """Select and tailor the policy snapshot tree."""
-        tpl_key = "TC01_policy.md"
+    def _get_policy_template(self, case: BenchmarkCase) -> Tuple[str, str]:
+        """Select and tailor the policy snapshot tree based on policy domain."""
+        policy_map = {
+            "FAM01": "TC01_policy.md",
+            "FAM02": "TC05_policy.md",
+            "FAM03": "TC10_policy.md",
+            "FAM04": "TC33_policy.md",
+            "FAM05": "TC19_policy.md",
+            "FAM06": "TC45_policy.md",
+            "FAM07": "TC08_policy.md",
+            "FAM08": "TC70_policy.md",
+            "FAM09": "TC100_policy.md",
+            "FAM10": "TC21_policy.md",
+            "FAM11": "TC05_policy.md",
+            "FAM12": "TC04_policy.md",
+            "FAM13": "TC01_policy.md",
+        }
+        tpl_key = policy_map.get(case.family_id, "TC01_policy.md")
         raw = self.policy_templates.get(tpl_key)
         if not raw:
             raw = next(iter(self.policy_templates.values())) if self.policy_templates else "- policy: GuardSLM Course Policy"
@@ -102,7 +121,7 @@ class PackageBuilder:
         initials = "".join([part[0].upper() for part in case.actor_display_name.split()[:2]])
         user_line = f'button "User profile menu": {initials} {case.actor_display_name} @{case.actor_username}'
         tailored = re.sub(r'button "User profile menu": [^\n]+', user_line, raw)
-        return tailored
+        return tailored, tpl_key
 
     def build_dataset(self) -> Dict[str, Any]:
         """Generate and package the complete benchmark."""
@@ -118,13 +137,15 @@ class PackageBuilder:
 
         for case in cases:
             # 1. Page accessibility snapshot
-            page_tree = self._get_page_template(case)
+            page_tree, page_tpl = self._get_page_template(case)
+            case.source_template = page_tpl
+            case.provenance = "TEMPLATE_DERIVED"
             page_filename = f"{case.test_id}_page.md"
             with open(os.path.join(self.pages_dir, page_filename), "w", encoding="utf-8") as f:
                 f.write(page_tree + "\n")
 
             # 2. Policy accessibility snapshot
-            policy_tree = self._get_policy_template(case)
+            policy_tree, _ = self._get_policy_template(case)
             policy_filename = f"{case.test_id}_policy.md"
             with open(os.path.join(self.policies_dir, policy_filename), "w", encoding="utf-8") as f:
                 f.write(policy_tree + "\n")

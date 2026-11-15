@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..database import get_db
-from ..models import User, Course, LearningModule, Lesson
+from ..models import User, Course, LearningModule, Lesson, ModuleCompletion
 from ..schemas import (
     LearningModuleOut, LearningModuleCreate, LessonOut, LessonCreate
 )
@@ -188,7 +188,88 @@ def get_module(
             )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Module locked until {module.unlock_date}.")
 
+        # Prerequisite check
+        if module.prerequisite_id:
+            completed_prereq = db.scalar(
+                select(ModuleCompletion).where(
+                    ModuleCompletion.module_id == module.prerequisite_id,
+                    ModuleCompletion.student_id == current_user.id,
+                )
+            )
+            if not completed_prereq:
+                prereq_title = module.prerequisite.title if module.prerequisite else f"Module #{module.prerequisite_id}"
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied: you must complete prerequisite module '{prereq_title}' first.",
+                )
+
     return serialize_module(module, include_lessons=True, redact_content=False)
+
+
+@router.post("/modules/{module_id}/complete")
+def complete_module(
+    module_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mark a learning module as completed for the current student."""
+    module = db.get(LearningModule, module_id)
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found.")
+
+    verify_course_access(module.course_id, current_user, db)
+
+    existing = db.scalar(
+        select(ModuleCompletion).where(
+            ModuleCompletion.module_id == module_id,
+            ModuleCompletion.student_id == current_user.id,
+        )
+    )
+    if not existing:
+        completion = ModuleCompletion(
+            module_id=module_id,
+            student_id=current_user.id,
+        )
+        db.add(completion)
+        db.commit()
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="COMPLETE_LEARNING_MODULE",
+        resource_type="module",
+        resource_id=str(module_id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"User {current_user.username} marked module #{module_id} as completed.",
+    )
+    return {"message": f"Module '{module.title}' marked as completed."}
+
+
+@router.get("/modules/{module_id}/progress")
+def get_module_progress(
+    module_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get completion status of a module for the current student."""
+    module = db.get(LearningModule, module_id)
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found.")
+
+    verify_course_access(module.course_id, current_user, db)
+
+    completion = db.scalar(
+        select(ModuleCompletion).where(
+            ModuleCompletion.module_id == module_id,
+            ModuleCompletion.student_id == current_user.id,
+        )
+    )
+    return {
+        "module_id": module.id,
+        "is_completed": completion is not None,
+        "completed_at": completion.completed_at if completion else None,
+    }
 
 
 @router.put("/modules/{module_id}", response_model=LearningModuleOut)

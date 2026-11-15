@@ -1,12 +1,14 @@
+import os
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, File, UploadFile, Form
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..database import get_db
-from ..models import User, Course, CourseFile, GroupMember
-from ..schemas import CourseFileOut, CourseFileCreate
+from ..models import User, Course, CourseFile, Group, GroupMember
+from ..schemas import CourseFileOut, CourseFileCreate, CourseFileArchive
 from ..auth import get_current_user
 from ..permissions import (
     verify_course_access,
@@ -15,8 +17,11 @@ from ..permissions import (
     log_activity,
 )
 from ..clock import Clock
+from ..storage import save_uploaded_file, delete_stored_file, sanitize_filename
 
 router = APIRouter(tags=["Files"])
+
+VALID_ACCESS_LEVELS = {"public", "students", "staff_only", "group_only", "private"}
 
 
 def serialize_course_file(f: CourseFile) -> Dict[str, Any]:
@@ -26,6 +31,7 @@ def serialize_course_file(f: CourseFile) -> Dict[str, Any]:
         "folder_path": f.folder_path,
         "filename": f.filename,
         "file_size_bytes": f.file_size_bytes,
+        "mime_type": f.mime_type if hasattr(f, "mime_type") and f.mime_type else "application/octet-stream",
         "owner_id": f.owner_id,
         "owner_name": f.owner.full_name if f.owner else "System",
         "access_level": f.access_level,
@@ -200,6 +206,13 @@ def create_course_file(
     verify_course_access(course_id, current_user, db)
     course_role = get_user_course_role(course_id, current_user, db)
 
+    # Validate access_level
+    if file_data.access_level not in VALID_ACCESS_LEVELS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid access_level. Must be one of: {sorted(list(VALID_ACCESS_LEVELS))}",
+        )
+
     # Permission checks on access_level
     if file_data.access_level == "staff_only" and course_role not in ["admin", "professor", "ta"]:
         raise HTTPException(
@@ -213,6 +226,12 @@ def create_course_file(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="group_id is required when access_level is group_only.",
             )
+        grp = db.get(Group, file_data.group_id)
+        if not grp or grp.course_id != course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid group association for this course.",
+            )
         if course_role not in ["admin", "professor", "ta"]:
             is_member = db.scalar(
                 select(GroupMember).where(
@@ -225,12 +244,18 @@ def create_course_file(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="You must be a member of the group to upload a group-only file.",
                 )
+    else:
+        file_data.group_id = None
+
+    clean_filename = sanitize_filename(file_data.filename)
 
     new_file = CourseFile(
         course_id=course_id,
         folder_path=file_data.folder_path,
-        filename=file_data.filename,
+        filename=clean_filename,
         file_size_bytes=file_data.file_size_bytes,
+        storage_path="",
+        mime_type="application/octet-stream",
         owner_id=current_user.id,
         access_level=file_data.access_level,
         group_id=file_data.group_id,
@@ -248,9 +273,135 @@ def create_course_file(
         resource_id=str(new_file.id),
         outcome="ALLOW",
         http_status=status.HTTP_201_CREATED,
-        detail=f"User {current_user.username} uploaded file '{new_file.filename}' (#{new_file.id}) to course #{course_id}.",
+        detail=f"User {current_user.username} registered file '{new_file.filename}' (#{new_file.id}) in course #{course_id}.",
     )
     return serialize_course_file(new_file)
+
+
+@router.post("/courses/{course_id}/files/upload", response_model=CourseFileOut, status_code=status.HTTP_201_CREATED)
+def upload_course_file(
+    course_id: int,
+    file: UploadFile = File(...),
+    folder_path: str = Form("/"),
+    access_level: str = Form("public"),
+    group_id: Optional[int] = Form(None),
+    expires_at: Optional[str] = Form(""),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Upload a physical file using multipart form data and save to local storage."""
+    verify_course_access(course_id, current_user, db)
+    course_role = get_user_course_role(course_id, current_user, db)
+
+    if access_level not in VALID_ACCESS_LEVELS:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid access_level. Must be one of: {sorted(list(VALID_ACCESS_LEVELS))}",
+        )
+
+    if access_level == "staff_only" and course_role not in ["admin", "professor", "ta"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only course staff can create staff-only files.",
+        )
+
+    if access_level == "group_only":
+        if not group_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="group_id is required when access_level is group_only.",
+            )
+        grp = db.get(Group, group_id)
+        if not grp or grp.course_id != course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid group association for this course.",
+            )
+        if course_role not in ["admin", "professor", "ta"]:
+            is_member = db.scalar(
+                select(GroupMember).where(
+                    GroupMember.group_id == group_id,
+                    GroupMember.user_id == current_user.id,
+                )
+            )
+            if not is_member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must be a member of the group to upload a group-only file.",
+                )
+    else:
+        group_id = None
+
+    clean_filename = sanitize_filename(file.filename or "file")
+    storage_path, file_size, mime_type = save_uploaded_file(file)
+
+    new_file = CourseFile(
+        course_id=course_id,
+        folder_path=folder_path,
+        filename=clean_filename,
+        storage_path=storage_path,
+        mime_type=mime_type,
+        file_size_bytes=file_size,
+        owner_id=current_user.id,
+        access_level=access_level,
+        group_id=group_id,
+        expires_at=expires_at or "",
+    )
+    db.add(new_file)
+    db.commit()
+    db.refresh(new_file)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="UPLOAD_COURSE_FILE",
+        resource_type="file",
+        resource_id=str(new_file.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_201_CREATED,
+        detail=f"User {current_user.username} uploaded physical file '{new_file.filename}' (#{new_file.id}) to course #{course_id}.",
+    )
+    return serialize_course_file(new_file)
+
+
+@router.put("/files/{file_id}/archive", response_model=CourseFileOut)
+def archive_course_file(
+    file_id: int,
+    payload: CourseFileArchive,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Archive or unarchive a course file. Only staff/admin or file owner permitted."""
+    file = db.get(CourseFile, file_id)
+    if not file:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found.")
+
+    verify_course_access(file.course_id, current_user, db)
+    course_role = get_user_course_role(file.course_id, current_user, db)
+
+    is_staff = course_role in ["admin", "professor", "ta"]
+    is_owner = file.owner_id == current_user.id
+    if not (is_staff or is_owner):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: only course staff or file owner can archive files.",
+        )
+
+    file.is_archived = payload.is_archived
+    db.commit()
+    db.refresh(file)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="ARCHIVE_FILE",
+        resource_type="file",
+        resource_id=str(file.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_200_OK,
+        detail=f"User {current_user.username} set is_archived={payload.is_archived} on file #{file.id}.",
+    )
+    return serialize_course_file(file)
 
 
 @router.get("/files/{file_id}", response_model=CourseFileOut)
@@ -304,7 +455,15 @@ def download_file(
         http_status=status.HTTP_200_OK,
         detail=f"User {current_user.username} downloaded file #{file.id} ('{file.filename}').",
     )
-    # Return mock payload
+
+    if file.storage_path and os.path.isfile(file.storage_path):
+        return FileResponse(
+            file.storage_path,
+            filename=file.filename,
+            media_type=file.mime_type or "application/octet-stream",
+        )
+
+    # Return synthetic payload for mock/seeded files without disk blobs
     content = f"--- Content of {file.filename} (Size: {file.file_size_bytes} bytes) ---"
     return Response(
         content=content,
@@ -342,6 +501,9 @@ def delete_file(
             detail=f"User {current_user.username} denied permission to delete file #{file.id}.",
         )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied: you cannot delete this file.")
+
+    if file.storage_path:
+        delete_stored_file(file.storage_path)
 
     db.delete(file)
     db.commit()

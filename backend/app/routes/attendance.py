@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..database import get_db
-from ..models import User, Course, CourseSection, AttendanceRecord, Enrollment
+from ..models import User, Course, CourseSection, AttendanceRecord, AttendanceSession, Enrollment
 from ..schemas import (
-    AttendanceRecordOut, AttendanceRecordCreate, CourseSectionOut, CourseSectionCreate
+    AttendanceRecordOut, AttendanceRecordCreate, CourseSectionOut, CourseSectionCreate,
+    AttendanceSessionOut, AttendanceSessionCreate
 )
 from ..auth import get_current_user
 from ..permissions import (
@@ -26,9 +27,24 @@ def serialize_section(s: CourseSection) -> Dict[str, Any]:
         "course_id": s.course_id,
         "section_number": s.section_number,
         "title": s.title,
+        "room": getattr(s, "room", ""),
+        "meeting_times": getattr(s, "meeting_times", ""),
+        "capacity": getattr(s, "capacity", 30),
         "instructor_id": s.instructor_id,
         "instructor_name": s.instructor.full_name if s.instructor else None,
         "created_at": s.created_at,
+    }
+
+
+def serialize_attendance_session(sess: AttendanceSession) -> Dict[str, Any]:
+    return {
+        "id": sess.id,
+        "course_id": sess.course_id,
+        "section_id": sess.section_id,
+        "session_date": sess.session_date,
+        "title": sess.title,
+        "created_by_id": sess.created_by_id,
+        "created_at": sess.created_at,
     }
 
 
@@ -37,6 +53,7 @@ def serialize_attendance(r: AttendanceRecord) -> Dict[str, Any]:
         "id": r.id,
         "course_id": r.course_id,
         "section_id": r.section_id,
+        "session_id": getattr(r, "session_id", None),
         "student_id": r.student_id,
         "student_name": r.student.full_name if r.student else "Student",
         "session_date": r.session_date,
@@ -91,6 +108,9 @@ def create_course_section(
         course_id=course_id,
         section_number=section_data.section_number,
         title=section_data.title,
+        room=section_data.room,
+        meeting_times=section_data.meeting_times,
+        capacity=section_data.capacity,
         instructor_id=section_data.instructor_id,
     )
     db.add(new_section)
@@ -108,6 +128,64 @@ def create_course_section(
         detail=f"Staff {current_user.username} created section '{new_section.section_number}' for course #{course_id}.",
     )
     return serialize_section(new_section)
+
+
+# ===================== ATTENDANCE SESSIONS =====================
+
+@router.get("/courses/{course_id}/attendance/sessions", response_model=List[AttendanceSessionOut])
+def list_attendance_sessions(
+    course_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List attendance sessions for a course."""
+    verify_course_access(course_id, current_user, db)
+    sessions = db.scalars(
+        select(AttendanceSession).where(AttendanceSession.course_id == course_id).order_by(AttendanceSession.session_date.desc())
+    ).all()
+    return [serialize_attendance_session(s) for s in sessions]
+
+
+@router.post("/courses/{course_id}/attendance/sessions", response_model=AttendanceSessionOut, status_code=status.HTTP_201_CREATED)
+def create_attendance_session(
+    course_id: int,
+    payload: AttendanceSessionCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a new attendance session. Course staff only."""
+    verify_course_staff(course_id, current_user, db)
+
+    if payload.section_id:
+        sec = db.get(CourseSection, payload.section_id)
+        if not sec or sec.course_id != course_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Section does not belong to this course.",
+            )
+
+    session = AttendanceSession(
+        course_id=course_id,
+        section_id=payload.section_id,
+        session_date=payload.session_date,
+        title=payload.title,
+        created_by_id=current_user.id,
+    )
+    db.add(session)
+    db.commit()
+    db.refresh(session)
+
+    log_activity(
+        db=db,
+        user=current_user,
+        action="CREATE_ATTENDANCE_SESSION",
+        resource_type="attendance_session",
+        resource_id=str(session.id),
+        outcome="ALLOW",
+        http_status=status.HTTP_201_CREATED,
+        detail=f"Staff {current_user.username} created attendance session '{session.title}' on {session.session_date}.",
+    )
+    return serialize_attendance_session(session)
 
 
 # ===================== ATTENDANCE RECORDS =====================
@@ -194,6 +272,8 @@ def record_attendance(
         # Update existing
         existing.status = attendance_data.status
         existing.section_id = attendance_data.section_id
+        if attendance_data.session_id:
+            existing.session_id = attendance_data.session_id
         existing.notes = attendance_data.notes
         existing.recorded_by_id = current_user.id
         db.commit()
@@ -203,6 +283,7 @@ def record_attendance(
     new_record = AttendanceRecord(
         course_id=course_id,
         section_id=attendance_data.section_id,
+        session_id=attendance_data.session_id,
         student_id=attendance_data.student_id,
         session_date=attendance_data.session_date,
         status=attendance_data.status,
