@@ -187,10 +187,43 @@ export default function AIAssistantWidget() {
     setLoading(true);
 
     try {
+      const activeMode = (typeof window !== 'undefined' && window.__RESEARCH_MODE__) || localStorage.getItem('ai_research_mode') || 'standard';
+      const isCollectionMode = activeMode === 'collection';
+
+      // 1. Retrieve or await browser accessibility snapshot
+      let browserSnapshot = null;
+      if (typeof window !== 'undefined' && typeof window.__CAPTURE_SNAPSHOT__ === 'function') {
+        try {
+          browserSnapshot = await window.__CAPTURE_SNAPSHOT__();
+        } catch (err) {
+          console.error('[AIAssistantWidget] Failed to invoke __CAPTURE_SNAPSHOT__ bridge:', err);
+        }
+      }
+      if (!browserSnapshot && typeof window !== 'undefined' && window.__PENDING_BROWSER_SNAPSHOT__) {
+        browserSnapshot = window.__PENDING_BROWSER_SNAPSHOT__;
+        window.__PENDING_BROWSER_SNAPSHOT__ = null; // consume once
+      }
+
+      // 2. Strict validation in collection mode: must not silently fall back without snapshot
+      if (isCollectionMode && (!browserSnapshot || (typeof browserSnapshot === 'string' && !browserSnapshot.trim()))) {
+        const errMsg = 'Collection mode failure: Browser accessibility snapshot is missing or unavailable before message dispatch.';
+        console.error(errMsg);
+        setError(errMsg);
+        setLoading(false);
+        throw new Error(errMsg);
+      }
+
+      const snapshotPayload = typeof browserSnapshot === 'object' && browserSnapshot !== null
+        ? JSON.stringify(browserSnapshot)
+        : browserSnapshot;
+
+      console.log(`[AIAssistantWidget] Dispatching request with snapshot (${snapshotPayload ? snapshotPayload.length : 0} bytes), mode: ${activeMode}`);
+
       const res = await api.post(`/api/ai/conversations/${convId}/messages`, {
         user_request: prompt,
         page_context: currentContext,
-        mode: (typeof window !== 'undefined' && window.__RESEARCH_MODE__) || localStorage.getItem('ai_research_mode') || 'standard',
+        browser_snapshot: snapshotPayload,
+        mode: activeMode,
       });
 
       const assistantMsg = {
@@ -205,7 +238,7 @@ export default function AIAssistantWidget() {
 
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (err) {
-      setError(err.response?.data?.detail || 'Policy Guard communication failure');
+      setError(err.response?.data?.detail || err.message || 'Policy Guard communication failure');
     } finally {
       setLoading(false);
     }

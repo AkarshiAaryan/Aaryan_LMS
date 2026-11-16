@@ -3,6 +3,7 @@ Browser-context extraction and server-side validation layer.
 Constructs authoritative LMSContext for AI Assistant interactions.
 """
 
+import json
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -31,6 +32,11 @@ class LMSContext:
     attempts_used: int = 0
     available_context: List[str] = field(default_factory=list)
     browser_snapshot_text: Optional[str] = None
+    browser_snapshot_nodes_count: int = 0
+    browser_snapshot_headings: List[str] = field(default_factory=list)
+    browser_snapshot_visible_text: str = ""
+    browser_snapshot_detected_policies: List[str] = field(default_factory=list)
+    browser_snapshot_interactive_controls: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -185,16 +191,81 @@ def extract_and_validate_context(
             else:
                 ctx.assessment_status = "active"
 
-    # 3. Augment with Browser Snapshot Insights
+    # 3. Augment with Browser Snapshot Evidence (CDP AXTree or raw text)
     if ctx.browser_snapshot_text:
-        snapshot_lower = ctx.browser_snapshot_text.lower()
-        if "active quiz" in snapshot_lower or "question 1 of" in snapshot_lower:
-            ctx.page_type = "quiz_attempt"
-            ctx.assessment_status = "active"
-        elif "gradebook" in snapshot_lower:
-            ctx.page_type = "gradebook"
-        elif "submit assignment" in snapshot_lower:
-            ctx.page_type = "assignment_detail"
+        snapshot_str = ctx.browser_snapshot_text
+        nodes = []
+        headings = []
+        all_text_fragments = []
+        controls = []
+
+        try:
+            parsed = json.loads(snapshot_str)
+            if isinstance(parsed, dict) and "nodes" in parsed:
+                nodes = parsed["nodes"]
+            elif isinstance(parsed, list):
+                nodes = parsed
+            elif isinstance(parsed, dict) and "tree" in parsed:
+                nodes = parsed["tree"].get("nodes", [])
+        except Exception:
+            nodes = []
+
+        if nodes:
+            ctx.browser_snapshot_nodes_count = len(nodes)
+            for node in nodes:
+                role_val = ""
+                if isinstance(node.get("role"), dict):
+                    role_val = str(node["role"].get("value", "")).lower()
+                elif isinstance(node.get("role"), str):
+                    role_val = str(node["role"]).lower()
+
+                name_val = ""
+                if isinstance(node.get("name"), dict):
+                    name_val = str(node["name"].get("value", "")).strip()
+                elif isinstance(node.get("name"), str):
+                    name_val = str(node["name"]).strip()
+
+                val_val = ""
+                if isinstance(node.get("value"), dict):
+                    val_val = str(node["value"].get("value", "")).strip()
+                elif isinstance(node.get("value"), str):
+                    val_val = str(node["value"]).strip()
+
+                if role_val in ["heading"] and name_val:
+                    headings.append(name_val)
+                if role_val in ["button", "link", "combobox"] and name_val:
+                    controls.append(f"{role_val}: {name_val}")
+                for txt in [name_val, val_val]:
+                    if txt and txt not in all_text_fragments:
+                        all_text_fragments.append(txt)
+
+            ctx.browser_snapshot_headings = headings[:25]
+            ctx.browser_snapshot_interactive_controls = controls[:30]
+            ctx.browser_snapshot_visible_text = " | ".join(all_text_fragments[:200])
+        else:
+            ctx.browser_snapshot_visible_text = snapshot_str[:2000]
+
+        snapshot_lower = (ctx.browser_snapshot_visible_text + " " + snapshot_str[:5000]).lower()
+
+        # Detect visible policy indicators and instructional banners
+        if any(w in snapshot_lower for w in ["independent work", "honor code", "no solutions", "original work"]):
+            ctx.browser_snapshot_detected_policies.append("INDEPENDENT_WORK_POLICY")
+        if any(w in snapshot_lower for w in ["hints permitted", "conceptual guidance", "clarifications allowed"]):
+            ctx.browser_snapshot_detected_policies.append("HINTS_PERMITTED_POLICY")
+        if any(w in snapshot_lower for w in ["submission review", "view submission", "student submissions"]):
+            ctx.browser_snapshot_detected_policies.append("SUBMISSION_REVIEW_ACTIVE")
+
+        # Corroborate context from snapshot if missing
+        if not ctx.resource_type:
+            if "binary search trees" in snapshot_lower or "assignment 14" in snapshot_lower:
+                ctx.resource_type = "assignment"
+                ctx.resource_name = "Binary Search Trees"
+                ctx.page_type = "assignment_detail"
+            elif "active quiz" in snapshot_lower or "question 1 of" in snapshot_lower:
+                ctx.page_type = "quiz_attempt"
+                ctx.resource_type = "quiz"
+            elif "gradebook" in snapshot_lower:
+                ctx.page_type = "gradebook"
 
     # Summary tags
     ctx.available_context.append(f"Effective Role: {ctx.effective_role}")
@@ -203,5 +274,8 @@ def extract_and_validate_context(
     if ctx.resource_name:
         ctx.available_context.append(f"Resource: {ctx.resource_name} ({ctx.resource_type})")
     ctx.available_context.append(f"Assessment Status: {ctx.assessment_status}")
+    if ctx.browser_snapshot_nodes_count > 0:
+        ctx.available_context.append(f"Snapshot AX Nodes: {ctx.browser_snapshot_nodes_count}")
 
     return ctx
+

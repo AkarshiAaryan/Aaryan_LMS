@@ -23,6 +23,8 @@ def compute_baseline(conv_ids):
                 "guard_decision": it.guard_decision,
                 "violation_categories": json.loads(it.violation_categories_json or "[]"),
                 "detected_intent": it.detected_intent,
+                "browser_context": json.loads(it.browser_context_json or "{}"),
+                "browser_snapshot_ref": it.browser_snapshot_ref,
             }
             for it in sorted(conv.interactions, key=lambda x: x.sequence_number)
         ]

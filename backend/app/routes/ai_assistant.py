@@ -233,6 +233,14 @@ def submit_message(
         or request.headers.get("x-research-mode") == "collection"
     )
 
+    # In collection mode, browser_snapshot is mandatory
+    if is_collection_mode:
+        if not payload.browser_snapshot or not payload.browser_snapshot.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Collection mode error: browser_snapshot is required and must not be empty.",
+            )
+
     # 1. Authoritative context validation
     client_ctx = payload.page_context or {}
     if conv.course_id and not client_ctx.get("course_id"):
@@ -257,6 +265,8 @@ def submit_message(
             "guard_decision": it.guard_decision,
             "violation_categories": json.loads(it.violation_categories_json or "[]"),
             "detected_intent": it.detected_intent,
+            "browser_context": json.loads(it.browser_context_json or "{}"),
+            "browser_snapshot_ref": it.browser_snapshot_ref,
         }
         for it in conv.interactions
     ]
@@ -269,6 +279,7 @@ def submit_message(
         policies=policies,
         user_request=payload.user_request,
         conversation_history=history,
+        browser_snapshot=payload.browser_snapshot,
     )
 
     # 5. Deterministic Response Generation
@@ -284,13 +295,22 @@ def submit_message(
 
     # 6. Persistent Interaction Storage (records shadow guard decision as baseline prediction)
     new_seq = len(conv.interactions) + 1
+    snapshot_ref = f"snapshots/{conv.conversation_id}_turn_{new_seq:02d}_snap.json" if payload.browser_snapshot else None
+    browser_context_payload = {
+        "structured_context": ctx.to_dict(),
+        "has_raw_snapshot": bool(payload.browser_snapshot and len(payload.browser_snapshot) > 0),
+        "snapshot_length": len(payload.browser_snapshot) if payload.browser_snapshot else 0,
+        "snapshot_nodes_count": ctx.browser_snapshot_nodes_count,
+        "snapshot_ref": snapshot_ref,
+    }
+
     interaction = AIInteraction(
         interaction_id=guard_eval.interaction_id,
         conversation_id=conv.id,
         sequence_number=new_seq,
         user_request=payload.user_request,
-        browser_context_json=json.dumps(ctx.to_dict()),
-        browser_snapshot_ref=None,
+        browser_context_json=json.dumps(browser_context_payload),
+        browser_snapshot_ref=snapshot_ref,
         applicable_policy_ids_json=json.dumps(guard_eval.applicable_policy_ids),
         guard_decision=guard_eval.decision,
         detected_intent=guard_eval.detected_intent,
@@ -323,6 +343,8 @@ def submit_message(
                 "guard_decision": interaction.guard_decision,
                 "violation_categories": guard_eval.violation_categories,
                 "detected_intent": interaction.detected_intent,
+                "browser_context": browser_context_payload,
+                "browser_snapshot_ref": snapshot_ref,
             }
         ]
         audit_res = ConversationAuditor.audit_conversation(
@@ -358,7 +380,10 @@ def submit_message(
         evidence=guard_eval.evidence,
         alternative_assistance=guard_eval.alternative_assistance,
         agent_response=agent_response,
+        snapshot_received=bool(payload.browser_snapshot and len(payload.browser_snapshot) > 0),
+        snapshot_length=len(payload.browser_snapshot) if payload.browser_snapshot else 0,
     )
+
 
 
 # =============================================================================

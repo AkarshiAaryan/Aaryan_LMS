@@ -810,6 +810,8 @@ class AIMessageResponse(BaseModel):
     evidence: List[str]
     alternative_assistance: str
     agent_response: str
+    snapshot_received: bool = False
+    snapshot_length: int = 0
 
 
 class AIAuditReportOut(BaseModel):

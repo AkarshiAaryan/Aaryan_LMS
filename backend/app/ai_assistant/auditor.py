@@ -95,17 +95,16 @@ class ConversationAuditor:
                 collected_violations.add(v)
 
         # -------------------------------------------------------------
-        # Pattern 1: Role Impersonation / Policy Evasion
+        # Pattern 1: Role Impersonation
         # -------------------------------------------------------------
         has_role_override = any(
             ViolationCategory.ROLE_IMPERSONATION in (it.get("violation_categories") or [])
-            or ViolationCategory.POLICY_EVASION in (it.get("violation_categories") or [])
             for it in interactions
         )
         if has_role_override:
             detected_patterns.append("ROLE_IMPERSONATION_ATTEMPT")
             for it in interactions:
-                if any(v in (it.get("violation_categories") or []) for v in [ViolationCategory.ROLE_IMPERSONATION, ViolationCategory.POLICY_EVASION]):
+                if ViolationCategory.ROLE_IMPERSONATION in (it.get("violation_categories") or []):
                     relevant_interaction_ids.append(it.get("interaction_id"))
                     evidence_snippets.append(f"Turn #{it.get('sequence_number', '?')}: '{it.get('user_request', '')[:100]}'")
 
@@ -170,10 +169,22 @@ class ConversationAuditor:
 
         # -------------------------------------------------------------
         # Pattern 5: High-Volume Legitimate Usage
-        # 5+ interactions with all ALLOW or permitted LIMIT, zero blocks/escalates
+        # 4+ interactions with all ALLOW or permitted LIMIT, zero blocks/escalates
         # -------------------------------------------------------------
         if total_turns >= 4 and block_count == 0 and escalate_count == 0:
             detected_patterns.append("HIGH_VOLUME_LEGITIMATE_USAGE")
+
+        # -------------------------------------------------------------
+        # Pattern 6: Isolated Probing Subsequently Abandoned
+        # 1-2 refusals followed by acceptance of alternatives and legitimate turns
+        # -------------------------------------------------------------
+        is_isolated_abandoned = False
+        if 1 <= block_count <= 2 and not has_role_override and "INCREMENTAL_SOLUTION_EXTRACTION" not in detected_patterns:
+            last_turns = interactions[-2:] if len(interactions) >= 2 else interactions[-1:]
+            if all(t.get("guard_decision") in ["ALLOW", "LIMIT"] for t in last_turns):
+                is_isolated_abandoned = True
+                if "ISOLATED_PROBING_ABANDONED" not in detected_patterns:
+                    detected_patterns.append("ISOLATED_PROBING_ABANDONED")
 
         # -------------------------------------------------------------
         # Classification & Recommendation Logic
@@ -185,8 +196,8 @@ class ConversationAuditor:
             or has_role_override
             or "INCREMENTAL_SOLUTION_EXTRACTION" in detected_patterns
             or block_count >= 3
-            or ViolationCategory.STUDENT_PRIVACY_VIOLATION in collected_violations
-            or ViolationCategory.UNAUTHORISED_GRADING in collected_violations
+            or (ViolationCategory.STUDENT_PRIVACY_VIOLATION in collected_violations and not is_isolated_abandoned)
+            or (ViolationCategory.UNAUTHORISED_GRADING in collected_violations and not is_isolated_abandoned)
         ):
             audit_label = AuditLabel.POLICY_VIOLATING
             recommended_action = AuditAction.ESCALATE
@@ -197,16 +208,18 @@ class ConversationAuditor:
             )
 
         elif (
-            block_count in [1, 2]
+            is_isolated_abandoned
+            or block_count in [1, 2]
             or "POLICY_EVASION_REPHRASING" in detected_patterns
             or "REPEATED_BOUNDARY_TESTING" in detected_patterns
         ):
             audit_label = AuditLabel.SUSPICIOUS
             recommended_action = AuditAction.REVIEW
             explanation = (
-                f"Conversation displays suspicious probing or isolated policy refusals ({block_count} blocked requests). "
+                f"Conversation displays suspicious probing or isolated policy refusals ({block_count} blocked requests) "
+                f"that were subsequently abandoned in favor of permissible educational activities. "
                 f"Patterns detected: {', '.join(detected_patterns) if detected_patterns else 'Isolated Refusals'}. "
-                "Recommended for instructor review to determine if student requires targeted academic guidance."
+                "Marked as SUSPICIOUS for independent human review because an isolated inquiry is insufficient to infer malicious intent."
             )
 
         else:

@@ -52,9 +52,14 @@ class PolicyGuard:
         re.IGNORECASE,
     )
     RE_COMPLETE_SOLUTION = re.compile(
-        r"(write|give|provide|show|generate|complete|do)\s+(me\s+)?(the\s+)?((entire|full|complete|whole|all)\s+)+(code|solution|implementation|homework|assignment|script|answers?)|"
+        r"(write|give|provide|show|generate|complete|do)\s+(me\s+)?(the\s+)?((entire|full|complete|whole|all|detailed)\s+)+([a-z0-9_+-]+\s+)?(code|solution|implementation|homework|assignment|script|answers?|pseudocode)|"
         r"(solve|complete)\s+(this|the)\s+(entire\s+)?(assignment|homework|project|task)\s+(for\s+me)?|"
-        r"give\s+me\s+the\s+answers?\s+to\s+(this|the)\s+assignment",
+        r"give\s+me\s+the\s+answers?\s+to\s+(this|the)\s+assignment|"
+        r"pseudocode\s+for\s+(every|all|the)\s+required\s+functions?",
+        re.IGNORECASE,
+    )
+    RE_SOLUTION_LAUNDERING = re.compile(
+        r"(rewrite|disguise|modify|change|rephrase)\s+.*(looks?\s+like|appear|won't\s+be\s+flagged|wont\s+be\s+flagged|pass\s+plagiarism|original\s+student|i\s+wrote\s+myself|plagiarism\s+(checkers?|detection)|flag\s+it)",
         re.IGNORECASE,
     )
     RE_QUIZ_ANSWER = re.compile(
@@ -86,10 +91,13 @@ class PolicyGuard:
         re.IGNORECASE,
     )
     RE_AI_DETECTION = re.compile(
-        r"(cheated\s+with\s+(chatgpt|ai|gpt)|ai-generated\s+(style|detection)|style\s+is\s+ai-generated|"
+        r"(cheated\s+with\s+(chatgpt|ai|gpt)|ai-generated\s+(style|detection|code)|style\s+is\s+ai-generated|"
         r"did\s+.*\s+use\s+(ai|chatgpt)|check\s+whether\s+.*(cheated|ai)|"
         r"accuse\s+.*cheating|"
-        r"(detect|determine|check|tell\s+me\s+if)\s+(whether\s+)?.*(used|cheated\s+with)\s+(chatgpt|ai|gpt))",
+        r"(detect|determine|check|tell\s+me\s+if)\s+(whether\s+)?.*(used|cheated\s+with)\s+(chatgpt|ai|gpt)|"
+        r"(tell\s+me\s+if|analyze\s+.*(and\s+)?(tell\s+me|confirm)|was\s+this|is\s+this).*(written|generated|produced)\s+(by|with)\s+(chatgpt|ai|an?\s+ai|an?\s+llm|gpt)|"
+        r"(confirm\s+if\s+it\s+is\s+ai-written|ai-written)|"
+        r"(confidence\s+score|detection\s+confidence|probability).*(ai-generated|ai|llm|chatgpt))",
         re.IGNORECASE,
     )
     RE_CROSS_COURSE = re.compile(
@@ -136,13 +144,19 @@ class PolicyGuard:
         policies: List[PolicyDefinition],
         user_request: str,
         conversation_history: Optional[List[Dict[str, Any]]] = None,
+        browser_snapshot: Optional[str] = None,
     ) -> GuardEvaluation:
         """
-        Authoritative guard evaluation logic.
+        Authoritative guard evaluation logic combining role permissions, server-side context,
+        browser accessibility snapshot evidence, and conversation history.
         """
         interaction_id = f"INT-{uuid.uuid4().hex[:12].upper()}"
         req_clean = user_request.strip()
         policy_ids = [p.policy_id for p in policies]
+
+        if browser_snapshot and not context.browser_snapshot_text:
+            context.browser_snapshot_text = browser_snapshot
+
 
         # -------------------------------------------------------------
         # 1. UNIVERSAL CHECK: Role Impersonation & Policy Evasion
@@ -210,6 +224,30 @@ class PolicyGuard:
         # 3. STUDENT POLICY EVALUATION
         # -------------------------------------------------------------
         if effective_role == "student":
+            # 3A-0. Solution Laundering / Plagiarism Evasion
+            if cls.RE_SOLUTION_LAUNDERING.search(req_clean):
+                ev = [f"Plagiarism circumvention pattern detected: '{req_clean[:80]}'"]
+                if context.browser_snapshot_nodes_count > 0:
+                    ev.append(f"Browser accessibility snapshot confirms user on '{context.resource_name or 'Assignment'}' view ({context.browser_snapshot_nodes_count} elements)")
+                return GuardEvaluation(
+                    interaction_id=interaction_id,
+                    decision="BLOCK",
+                    applicable_policy_ids=policy_ids,
+                    detected_intent="solution_laundering_and_plagiarism_evasion",
+                    requested_assistance_type="code_obfuscation",
+                    permitted_assistance_type="none",
+                    violation_categories=[
+                        ViolationCategory.POLICY_EVASION,
+                        ViolationCategory.ASSESSMENT_BYPASS,
+                    ],
+                    guard_explanation=(
+                        "Attempting to obfuscate, disguise, or launder AI-generated source code "
+                        "to evade institutional plagiarism detection violates academic integrity policies."
+                    ),
+                    evidence=ev,
+                    alternative_assistance="Please submit work written and formatted authentically by yourself.",
+                )
+
             # 3A. Privacy Violation: Asking for other students' submissions or marks
             if cls.RE_PEER_DATA.search(req_clean):
                 return GuardEvaluation(
@@ -298,6 +336,12 @@ class PolicyGuard:
                 if repeated_boundary:
                     violations.append(ViolationCategory.REPEATED_BOUNDARY_TESTING)
 
+                ev = [f"Active assignment context: {context.resource_name or 'Course Assignment'}"]
+                if context.browser_snapshot_nodes_count > 0:
+                    ev.append(f"Browser accessibility snapshot confirms active assignment view with {context.browser_snapshot_nodes_count} accessible elements")
+                if context.browser_snapshot_headings:
+                    ev.append(f"Snapshot headings: {', '.join(context.browser_snapshot_headings[:2])}")
+
                 return GuardEvaluation(
                     interaction_id=interaction_id,
                     decision="BLOCK" if context.assessment_status != "closed" else "LIMIT",
@@ -310,7 +354,7 @@ class PolicyGuard:
                         "Generating full solutions, complete source code, or end-to-end implementations "
                         "for active course assignments violates the Student AI Usage Policy."
                     ),
-                    evidence=[f"Active assignment context: {context.resource_name or 'Course Assignment'}"],
+                    evidence=ev,
                     alternative_assistance=(
                         "You can ask for an algorithm outline, a conceptual hint for a specific step, "
                         "or debugging assistance for code you have written yourself."
@@ -495,6 +539,12 @@ class PolicyGuard:
 
             # 5C. Prohibited: Style-based cheating accusations
             if cls.RE_AI_DETECTION.search(req_clean):
+                ev = [f"Misconduct determination inquiry detected: '{req_clean[:80]}'"]
+                if context.browser_snapshot_nodes_count > 0:
+                    ev.append(f"Browser accessibility snapshot confirms user on '{context.resource_name or 'Course'}' view ({context.browser_snapshot_nodes_count} elements)")
+                if context.browser_snapshot_headings:
+                    ev.append(f"Visible snapshot headings: {', '.join(context.browser_snapshot_headings[:2])}")
+
                 return GuardEvaluation(
                     interaction_id=interaction_id,
                     decision="BLOCK",
@@ -510,8 +560,8 @@ class PolicyGuard:
                         "Autonomous academic integrity decisions based on AI writing style detection "
                         "are prohibited without institutional disciplinary committee proceedings."
                     ),
-                    evidence=[f"Misconduct determination keyword detected"],
-                    alternative_assistance="Refer cases to the departmental academic integrity officer.",
+                    evidence=ev,
+                    alternative_assistance="Refer cases to the departmental academic integrity officer or conduct an oral code defense.",
                 )
 
             # 5C. Permitted Professor Operations: Authoring assessments, rubrics, solutions
