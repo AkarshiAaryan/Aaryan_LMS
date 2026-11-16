@@ -70,6 +70,7 @@ export default function App() {
         <Route path="courses/:id" element={<CourseDetail />} />
         <Route path="assignments" element={<Assignments />} />
         <Route path="assignments/:id" element={<AssignmentDetail />} />
+        <Route path="courses/:courseId/assignments/:id" element={<AssignmentDetail />} />
         <Route path="quizzes" element={<Quizzes />} />
         <Route path="quizzes/:id" element={<QuizDetail />} />
         <Route path="attempts/:attemptId" element={<QuizAttempt />} />

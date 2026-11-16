@@ -190,6 +190,7 @@ export default function AIAssistantWidget() {
       const res = await api.post(`/api/ai/conversations/${convId}/messages`, {
         user_request: prompt,
         page_context: currentContext,
+        mode: (typeof window !== 'undefined' && window.__RESEARCH_MODE__) || localStorage.getItem('ai_research_mode') || 'standard',
       });
 
       const assistantMsg = {
@@ -334,6 +335,7 @@ export default function AIAssistantWidget() {
                 onClick={handleStartNewChat}
                 title="New Chat Session"
                 className="p-1.5 text-slate-300 hover:text-white hover:bg-navy-800 rounded-lg transition"
+                data-testid="ai-assistant-new-chat"
               >
                 <Plus size={16} />
               </button>

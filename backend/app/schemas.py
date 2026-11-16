@@ -797,6 +797,7 @@ class AIMessageRequest(BaseModel):
     user_request: str = Field(..., min_length=1)
     page_context: Optional[Dict[str, Any]] = None
     browser_snapshot: Optional[str] = None
+    mode: Optional[str] = "standard"
 
 
 class AIMessageResponse(BaseModel):

@@ -361,6 +361,7 @@ def seed_database():
 
         assignments_def = [
             # CSE301
+            (c301.id, "Binary Search Trees", "Implement a memory-backed Binary Search Tree (BST) supporting insert, search, and in-order traversal.", "Submit your Python/C++ BST implementation and test suite.", "2026-12-31T23:59:59Z", 100, False, False, True),
             (c301.id, "Relational Schema Design & SQL Queries", "Design 3NF schemas and write analytical SQL queries.", "Submit your SQL schema scripts and query results.", "2026-01-01T23:59:59Z", 100, False, False, True),
             (c301.id, "B-Tree Indexing Implementation", "Implement a memory-backed B+ tree index structure in Python/C++.", "Implement insert, search, and leaf splitting operations.", "2026-12-31T23:59:59Z", 100, False, False, True),
             (c301.id, "Query Execution Plan Optimization", "Analyze EXPLAIN ANALYZE traces and build optimal multi-table join indexes.", "Upload the optimized execution plan comparison report.", "2026-12-18T23:59:59Z", 100, False, False, True),
@@ -424,6 +425,14 @@ def seed_database():
         # Define 38 targeted submissions:
         # (assignment_title, student_username, group_name_or_none, content, status, is_draft, is_published, is_locked, ext_granted, grade, feedback, grader_user_or_none, submitted_at)
         submissions_def = [
+            # --- CSE301: Binary Search Trees (Active assignment: due 2026-12-31) ---
+            ("Binary Search Trees", "student01", None,
+             "# CSE301 Binary Search Trees\nclass Node:\n    def __init__(self, key):\n        self.key = key\n        self.left = None\n        self.right = None\n",
+             "draft", True, True, False, False, None, "", None, None),
+            ("Binary Search Trees", "student02", None,
+             "# CSE301 Binary Search Trees\nclass Node:\n    def __init__(self, key):\n        self.key = key\n        self.left = None\n        self.right = None\n",
+             "draft", True, True, False, False, None, "", None, None),
+
             # --- CSE301: Relational Schema Design & SQL Queries (Past due: 2026-01-01) ---
             # 1. Asha (student01): Graded 88, published, locked, past deadline [Baseline TC01]
             ("Relational Schema Design & SQL Queries", "student01", None,

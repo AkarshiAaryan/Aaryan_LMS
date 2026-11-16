@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, desc
 
@@ -204,12 +204,16 @@ def delete_conversation(
 def submit_message(
     conversation_id: str,
     payload: AIMessageRequest,
+    request: Request,
+    mode: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Submits user prompt to the Policy Guard, executes simulated response engine,
     records interaction telemetry, and triggers longitudinal conversation auditor.
+    In research collection mode, the assistant responds independently of guard decisions
+    while the guard runs in shadow mode, and active auditor intervention is disabled.
     """
     conv = None
     if conversation_id.isdigit():
@@ -222,6 +226,12 @@ def submit_message(
 
     if conv.user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Cannot send messages to another user's conversation")
+
+    is_collection_mode = (
+        payload.mode == "collection"
+        or mode == "collection"
+        or request.headers.get("x-research-mode") == "collection"
+    )
 
     # 1. Authoritative context validation
     client_ctx = payload.page_context or {}
@@ -251,7 +261,7 @@ def submit_message(
         for it in conv.interactions
     ]
 
-    # 4. Authoritative Policy Guard evaluation
+    # 4. Authoritative Policy Guard evaluation (runs as shadow-mode baseline predictor in collection mode)
     guard_eval = PolicyGuard.evaluate(
         user_id=current_user.id,
         effective_role=ctx.effective_role,
@@ -268,9 +278,11 @@ def submit_message(
         user_request=payload.user_request,
         context=ctx,
         user_display_name=display_name,
+        mode="collection" if is_collection_mode else "standard",
+        conversation_history=history,
     )
 
-    # 6. Persistent Interaction Storage
+    # 6. Persistent Interaction Storage (records shadow guard decision as baseline prediction)
     new_seq = len(conv.interactions) + 1
     interaction = AIInteraction(
         interaction_id=guard_eval.interaction_id,
@@ -301,39 +313,40 @@ def submit_message(
     db.commit()
     db.refresh(interaction)
 
-    # 7. Incremental Multi-Turn Auditor Assessment
-    updated_history = history + [
-        {
-            "interaction_id": interaction.interaction_id,
-            "sequence_number": interaction.sequence_number,
-            "user_request": interaction.user_request,
-            "guard_decision": interaction.guard_decision,
-            "violation_categories": guard_eval.violation_categories,
-            "detected_intent": interaction.detected_intent,
-        }
-    ]
-    audit_res = ConversationAuditor.audit_conversation(
-        conversation_id=conv.conversation_id,
-        interactions=updated_history,
-        effective_role=ctx.effective_role,
-    )
+    # 7. Incremental Multi-Turn Auditor Assessment (disabled during live collection flow)
+    if not is_collection_mode:
+        updated_history = history + [
+            {
+                "interaction_id": interaction.interaction_id,
+                "sequence_number": interaction.sequence_number,
+                "user_request": interaction.user_request,
+                "guard_decision": interaction.guard_decision,
+                "violation_categories": guard_eval.violation_categories,
+                "detected_intent": interaction.detected_intent,
+            }
+        ]
+        audit_res = ConversationAuditor.audit_conversation(
+            conversation_id=conv.conversation_id,
+            interactions=updated_history,
+            effective_role=ctx.effective_role,
+        )
 
-    report = db.scalar(
-        select(AIAuditReport).where(AIAuditReport.conversation_id == conv.id).order_by(AIAuditReport.id.desc())
-    )
-    if not report:
-        report = AIAuditReport(conversation_id=conv.id)
-        db.add(report)
+        report = db.scalar(
+            select(AIAuditReport).where(AIAuditReport.conversation_id == conv.id).order_by(AIAuditReport.id.desc())
+        )
+        if not report:
+            report = AIAuditReport(conversation_id=conv.id)
+            db.add(report)
 
-    report.audit_label = audit_res.audit_label
-    report.detected_patterns_json = json.dumps(audit_res.detected_patterns)
-    report.violation_categories_json = json.dumps(audit_res.violation_categories)
-    report.relevant_interaction_ids_json = json.dumps(audit_res.relevant_interaction_ids)
-    report.explanation = audit_res.explanation
-    report.supporting_evidence_json = json.dumps(audit_res.supporting_evidence)
-    report.recommended_action = audit_res.recommended_action
-    report.created_at = datetime.utcnow()
-    db.commit()
+        report.audit_label = audit_res.audit_label
+        report.detected_patterns_json = json.dumps(audit_res.detected_patterns)
+        report.violation_categories_json = json.dumps(audit_res.violation_categories)
+        report.relevant_interaction_ids_json = json.dumps(audit_res.relevant_interaction_ids)
+        report.explanation = audit_res.explanation
+        report.supporting_evidence_json = json.dumps(audit_res.supporting_evidence)
+        report.recommended_action = audit_res.recommended_action
+        report.created_at = datetime.utcnow()
+        db.commit()
 
     return AIMessageResponse(
         interaction_id=interaction.interaction_id,
